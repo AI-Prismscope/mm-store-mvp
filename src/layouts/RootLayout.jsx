@@ -1,31 +1,61 @@
-import { useLocation } from "react-router-dom";
+// src/layouts/RootLayout.jsx
+import { Link, NavLink } from 'react-router-dom';
 
 export default function RootLayout({ children }) {
-  const location = useLocation();
-
-  const linkBase = "px-2 py-1 rounded";
-  const active = "bg-blue-600 text-white font-semibold";
-  const inactive = "text-blue-800 hover:bg-blue-100";
+  // This function determines the NavLink's classes.
+  // It's a powerful feature of React Router.
+  const getNavLinkClass = ({ isActive }) => {
+    const commonClasses = "px-3 py-2 rounded-md text-sm font-medium transition-colors";
+    if (isActive) {
+      return `${commonClasses} bg-gray-900 text-white`; // Active link style
+    }
+    return `${commonClasses} text-gray-300 hover:bg-gray-700 hover:text-white`; // Inactive link style
+  };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="sticky top-0 z-50 bg-white p-4 shadow">
-        <nav className="flex gap-4">
-          <a
-            href="/"
-            className={`${linkBase} ${location.pathname === "/" ? active : inactive}`}
-          >
-            Home
-          </a>
-          <a
-            href="/list"
-            className={`${linkBase} ${location.pathname === "/list" ? active : inactive}`}
-          >
-            Grocery List
-          </a>
+    <div className="min-h-screen bg-gray-100">
+      {/* Navigation Bar */}
+      <header className="bg-gray-800">
+        <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            
+            {/* Left Side: Logo/Brand */}
+            <div className="flex-shrink-0">
+              <Link to="/" className="text-white font-bold text-xl">
+                RecipeApp
+              </Link>
+            </div>
+
+            {/* Center: Main Navigation Links */}
+            <div className="hidden md:block">
+              <div className="ml-10 flex items-baseline space-x-4">
+                <NavLink to="/" className={getNavLinkClass}>
+                  Meal Plan
+                </NavLink>
+                <NavLink to="/my-recipes" className={getNavLinkClass}>
+                  My Recipes
+                </NavLink>
+              </div>
+            </div>
+
+            {/* Right Side: Login Link */}
+            <div className="hidden md:block">
+               <NavLink to="/login" className={getNavLinkClass}>
+                  Login
+               </NavLink>
+            </div>
+
+          </div>
         </nav>
       </header>
-      <main className="flex-1 p-4">{children}</main>
+
+      {/* Main Content */}
+      <main>
+        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+          {/* Your page content will be injected here by the router */}
+          {children}
+        </div>
+      </main>
     </div>
   );
 }
