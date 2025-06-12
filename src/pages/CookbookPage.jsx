@@ -1,69 +1,37 @@
 // src/pages/CookbookPage.jsx
 
-import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabaseClient'; // Make sure this path is correct
+import { useState } from 'react';
+import RecipeParserForm from '../components/RecipeParserForm'; // We will create this next
 
 export default function CookbookPage() {
-  // State to hold our list of products
-  const [products, setProducts] = useState([]);
-  // State to track if we are currently loading
-  const [loading, setLoading] = useState(true);
-  // State to hold any potential errors
-  const [error, setError] = useState(null);
-
-  // This `useEffect` hook runs once when the component first mounts
-  useEffect(() => {
-    async function fetchProducts() {
-      console.log('Attempting to fetch products from Supabase...');
-      setLoading(true);
-
-      // This is the core Supabase query. We are selecting everything from our 'products' table.
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('name', { ascending: true }); // Order them alphabetically
-
-      if (error) {
-        console.error('❌ Supabase fetch error:', error);
-        setError(error.message);
-        setProducts([]); // Clear any previous data
-      } else {
-        console.log('✅ Successfully fetched products:', data);
-        setProducts(data);
-        setError(null); // Clear any previous errors
-      }
-
-      setLoading(false);
-    }
-
-    fetchProducts();
-  }, []); // The empty dependency array [] means this effect runs only once
+  // This state will control whether the "Add Recipe" form is visible
+  const [isFormVisible, setIsFormVisible] = useState(false);
 
   return (
-    <div className="p-8 max-w-md mx-auto">
-      <h1 className="text-3xl font-bold mb-4 border-b pb-2">Supabase Connection Test</h1>
-      <h2 className="text-xl font-semibold mb-4">Products Table:</h2>
+    <div className="p-4 sm:p-6 md:p-8">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-800">My Recipes</h1>
+        {/* The button that opens our form */}
+        <button
+          onClick={() => setIsFormVisible(true)}
+          className="bg-purple-600 text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-purple-700 transition duration-300"
+        >
+          + Add Recipe
+        </button>
+      </div>
 
-      {/* Show a loading message while fetching */}
-      {loading && <p className="text-blue-500">Loading...</p>}
+      {/* This is where the list of recipe cards will go later */}
+      <div className="p-10 border-2 border-dashed border-gray-300 rounded-lg">
+        <p className="text-center text-gray-500">Your saved recipes will appear here.</p>
+      </div>
 
-      {/* Show an error message if something went wrong */}
-      {error && <p className="text-red-500 font-bold">Error: {error}</p>}
-      
-      {/* If not loading and no error, display the products */}
-      {!loading && !error && (
-        <ul className="list-disc list-inside space-y-2">
-          {products.map((product) => (
-            <li key={product.id} className="text-gray-700">
-              {product.name} (ID: {product.id})
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {/* Show a message if the table is empty */}
-      {!loading && products.length === 0 && !error && (
-        <p className="text-gray-500 italic">No products found. Did you run the populate script?</p>
+      {/* --- The Magic Part --- */}
+      {/* Conditionally render the form modal only when isFormVisible is true */}
+      {isFormVisible && (
+        <RecipeParserForm 
+          // We pass a function to the form so it can tell this page to close it
+          onClose={() => setIsFormVisible(false)} 
+        />
       )}
     </div>
   );
