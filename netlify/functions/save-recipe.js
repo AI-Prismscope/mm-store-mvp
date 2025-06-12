@@ -1,10 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 
-// This is our "admin" client. It uses the anon key and is used for interacting
-// with public tables or for actions where we don't need a specific user's permissions.
+// This is our NEW "admin" client. It uses the powerful service_role key.
+// It can bypass RLS and should ONLY be used on the backend.
 const adminSupabase = createClient(
   process.env.VITE_SUPABASE_URL,
-  process.env.VITE_SUPABASE_ANON_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY // Using the new, secret key
 );
 
 // The main Netlify handler boilerplate
@@ -12,14 +12,13 @@ export async function handler(event, context) {
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST,OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization', // IMPORTANT: Allow Authorization header
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   };
   if (event.httpMethod === 'OPTIONS') { return { statusCode: 200, headers }; }
   if (event.httpMethod !== 'POST') { return { statusCode: 405, headers, body: 'Method Not Allowed' }; }
 
   console.log('💾 SAVE-RECIPE FUNCTION TRIGGERED');
   try {
-    // We pass the whole event so we can access headers
     const response = await runAuthenticatedSave(event);
     return { ...response, headers };
   } catch (err) {
@@ -38,10 +37,10 @@ async function runAuthenticatedSave(event) {
     throw new Error('Authentication token is required to save a recipe.');
   }
 
-  // Create a Supabase client that acts on behalf of the user making the request
+  // Create a Supabase client that acts ON BEHALF OF THE USER making the request
   const userSupabase = createClient(
     process.env.VITE_SUPABASE_URL,
-    process.env.VITE_SUPABASE_ANON_KEY,
+    process.env.VITE_SUPABASE_ANON_KEY, // The public key is fine here
     { global: { headers: { Authorization: `Bearer ${jwt}` } } }
   );
 
@@ -52,7 +51,7 @@ async function runAuthenticatedSave(event) {
   }
   console.log(`💾 Received save request from user: ${user.id}`);
 
-  // --- Step 1: Deduplicate or Create the Global Recipe ---
+  // --- Step 1: Deduplicate or Create the Global Recipe using the ADMIN client ---
   let { data: existingRecipe } = await adminSupabase
     .from('recipes')
     .select('id')
@@ -65,7 +64,7 @@ async function runAuthenticatedSave(event) {
     recipeId = existingRecipe.id;
     console.log(`✅ Recipe from ${recipeData.sourceUrl} already exists. Using ID: ${recipeId}`);
   } else {
-    // --- If recipe is new, insert it and its ingredients ---
+    // --- If recipe is new, insert it and its ingredients using the ADMIN client ---
     console.log(`📝 Inserting new global recipe: "${recipeData.recipeName}"`);
     const { data: newRecipe, error: recipeError } = await adminSupabase
       .from('recipes')
@@ -83,7 +82,7 @@ async function runAuthenticatedSave(event) {
     recipeId = newRecipe.id;
     console.log(`✅ New recipe saved with global ID: ${recipeId}`);
 
-    // Now, perform the "V1 Brittle Link" for its ingredients
+    // Now, perform the "V1 Brittle Link" for its ingredients, also with the ADMIN client
     const ingredientsToInsert = [];
     if (Array.isArray(recipeData.ingredients)) {
       const { data: products } = await adminSupabase.from('products').select('id, name');
@@ -95,7 +94,6 @@ async function runAuthenticatedSave(event) {
         if (productId) {
           ingredientsToInsert.push({ recipe_id: recipeId, product_id: productId, quantity: ingredient.quantity, unit: ingredient.unit });
         } else {
-          // Log the failure for our review later
           await adminSupabase.from('unmatched_ingredients').insert({ normalized_attempt: ingredient.name, source_recipe_id: recipeId });
         }
       }
@@ -103,11 +101,12 @@ async function runAuthenticatedSave(event) {
     if (ingredientsToInsert.length > 0) {
       console.log(`🔗 Linking ${ingredientsToInsert.length} ingredients to new recipe.`);
       const { error: ingredientsError } = await adminSupabase.from('recipe_ingredients').insert(ingredientsToInsert);
-      if (ingredientsError) console.error("Warning: Error saving ingredients:", ingredientsError); // Log as warning, don't fail the whole request
+      if (ingredientsError) console.error("Warning: Error saving ingredients:", ingredientsError);
     }
   }
 
-  // --- Step 2: Add the recipe to the user's personal favorites list ---
+  // --- Step 2: Add the recipe to the user's personal favorites list using the USER client ---
+  // This is where RLS matters. This request is made *as the user*.
   console.log(`❤️ Adding recipe ${recipeId} to favorites for user ${user.id}`);
   const { error: favoriteError } = await userSupabase
     .from('user_favorite_recipes')
