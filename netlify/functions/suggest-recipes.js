@@ -57,7 +57,7 @@ export async function handler(event, context) {
 
     // 4. Sort and return the top 5 suggestions
     scoredRecipes.sort((a, b) => b.score - a.score);
-    const topSuggestions = scoredRecipes.slice(0, 5);
+    const topSuggestions = scoredRecipes.slice(0, 10);
     console.log(`Returning ${topSuggestions.length} suggestions.`);
     
     return { statusCode: 200, headers, body: JSON.stringify(topSuggestions) };

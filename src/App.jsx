@@ -13,6 +13,8 @@ import LoginPage from './pages/LoginPage';
 import SignUpPage from './pages/SignUpPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import AppLayout from './layouts/AppLayout'; // 👈 Import AppLayout
+import RecipeDetailPage from './pages/RecipeDetailPage';
+import ProductDetailPage from './pages/ProductDetailPage';
 
 export default function App() {
   return (
@@ -24,6 +26,7 @@ export default function App() {
       {/* Homepage Layout (no change) */}
       <Route element={<HomepageLayout />}>
         <Route path="/" element={<ShopPage />} />
+        <Route path="/product/:id" element={<ProductDetailPage />} /> 
       </Route>
       
       {/* --- NEW: PROTECTED APP LAYOUT --- */}
@@ -32,6 +35,7 @@ export default function App() {
         <Route element={<AppLayout />}> {/* 👈 Use the new layout */}
           <Route path="/my-recipes" element={<CookbookPage />} />
           <Route path="/plan" element={<MealPlanPage />} />
+          <Route path="/recipe/:id" element={<RecipeDetailPage />} />
         </Route>
       </Route>
     </Routes>

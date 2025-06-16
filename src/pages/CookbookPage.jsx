@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import RecipeParserForm from '../components/RecipeParserForm';
 import RecipeCard from '../components/RecipeCard'; // 👈 Import our new card
+import { Link } from 'react-router-dom';
 
 export default function CookbookPage() {
   const [isFormVisible, setIsFormVisible] = useState(false);
@@ -57,16 +58,21 @@ export default function CookbookPage() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-16 px-4 border-2 border-dashed border-gray-300 rounded-lg">
-              <h3 className="text-xl font-semibold text-gray-700">Your cookbook is empty!</h3>
-              <p className="text-gray-500 mt-2">Add a recipe from the web to get started.</p>
-              <button
-                onClick={() => setIsFormVisible(true)}
-                className="mt-4 bg-purple-600 text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-purple-700 transition"
-              >
-                Add Your First Recipe
-              </button>
-            </div>
+            <Link 
+              to={`/recipe/${recipe.id}`} // The link destination uses the recipe's ID
+              className="block bg-white rounded-lg shadow overflow-hidden group hover:shadow-xl transition-shadow duration-300"
+            >
+              <div className="text-center py-16 px-4 border-2 border-dashed border-gray-300 rounded-lg">
+                <h3 className="text-xl font-semibold text-gray-700">Your cookbook is empty!</h3>
+                <p className="text-gray-500 mt-2">Add a recipe from the web to get started.</p>
+                <button
+                  onClick={() => setIsFormVisible(true)}
+                  className="mt-4 bg-purple-600 text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-purple-700 transition"
+                >
+                  Add Your First Recipe
+                </button>
+              </div>
+            </Link>
           )}
         </>
       )}

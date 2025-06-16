@@ -43,19 +43,25 @@ export default function MealPlanPage() {
 
   // --- User Actions ---
   const handleAddToPlan = async (recipeId) => {
-    // We don't need to manually specify the user_id.
-    // As long as the user is logged in, the `supabase` client object
-    // will send the user's auth token automatically.
-    // The RLS policy on the backend will then allow the insert.
+    // Safety check: Don't do anything if the user isn't logged in
+    if (!session?.user) {
+      alert("Please log in to add recipes to your plan.");
+      return;
+    }
+
+    // THE FIX: We now explicitly include the user_id in the object we're inserting.
     const { error } = await supabase
       .from('meal_plan_recipes')
-      .insert({ recipe_id: recipeId }); // 👈 REMOVED user_id
+      .insert({
+        recipe_id: recipeId,
+        user_id: session.user.id // 👈 This is the crucial line
+      });
 
     if (error) {
-      // It's good practice to log the error to see what's happening
       console.error("Error adding to plan:", error);
-      alert("Could not add recipe to your plan.");
+      alert(`Could not add recipe to your plan. Error: ${error.message}`);
     } else {
+      console.log('Successfully added to plan!');
       // Reload all data to reflect the change
       loadData();
     }

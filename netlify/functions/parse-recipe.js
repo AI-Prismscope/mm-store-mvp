@@ -83,6 +83,7 @@ async function runParse(body) {
   Ingredient Normalization Rules:
   - "name" MUST be generic and singular (e.g., "flour", "egg", "red onion").
   - Remove brand names, plurals, and non-essential descriptors.
+  - "quantity" MUST be a numeric decimal value (e.g., 0.5, 0.25, 1.5).
 
   The entire output must be a single, minified JSON object and nothing else.`;
 

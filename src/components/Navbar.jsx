@@ -65,9 +65,9 @@ export default function Navbar() {
             {/* Conditional Auth Section */}
             {user ? (
               <div className="flex items-center space-x-4">
-                <span className="text-sm font-medium text-gray-600 hidden lg:block">
+                {/* <span className="text-sm font-medium text-gray-600 hidden lg:block">
                   {user.email}
-                </span>
+                </span> */}
                 <button onClick={handleLogout} className="text-sm font-medium text-red-600 hover:text-red-900">
                   Logout
                 </button>
