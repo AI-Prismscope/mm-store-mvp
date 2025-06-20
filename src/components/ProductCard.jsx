@@ -1,6 +1,6 @@
 // src/components/ProductCard.jsx
 import { Link } from 'react-router-dom';
-
+import { useCart } from '../context/CartContext';
 // A simple Plus icon for the add button
 const PlusIcon = () => (
     <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -10,9 +10,12 @@ const PlusIcon = () => (
   
   export default function ProductCard({ product }) {
     // In a real app, this function would likely be passed down as a prop
+    const { addItemToCart } = useCart();
+
     const handleAddToCart = (e) => {
+      e.preventDefault();
       e.stopPropagation(); // Prevents the click from triggering parent element clicks
-      alert(`Added ${product.name} to cart! (Functionality to be built)`);
+      addItemToCart(product.id);
     };
   
     // For the MVP, we'll generate a random price for visual representation

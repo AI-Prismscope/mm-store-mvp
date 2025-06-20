@@ -2,6 +2,7 @@
 
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 
 // A simple search icon component
 const SearchIcon = () => (
@@ -19,6 +20,7 @@ const CartIcon = () => (
 
 export default function Navbar() {
   const { user, logout } = useAuth();
+  const { cartItemCount } = useCart();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -82,7 +84,7 @@ export default function Navbar() {
             {/* Cart Button (no changes) */}
             <button className="flex items-center space-x-2 bg-red-200 text-red-800 font-bold px-4 py-2 rounded-full text-sm">
               <CartIcon />
-              <span>0</span>
+              <span>{cartItemCount}</span>
               <span>INCOMPLETE</span>
             </button>
           </div>

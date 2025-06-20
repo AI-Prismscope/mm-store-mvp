@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom'; // useParams gets the :id from the URL
 import { supabase } from '../lib/supabaseClient';
+import { useCart } from '../context/CartContext';
 
 export default function ProductDetailPage() {
   const { id } = useParams(); // 👈 Get the product ID from the URL
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { addItemToCart } = useCart();
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -46,6 +48,14 @@ export default function ProductDetailPage() {
     return <div className="p-8 text-center">Product not found.</div>;
   }
 
+  const handleAddToCart = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!product) return;
+    addItemToCart(product.id, 1); // Call the context function with the product's ID
+    alert(`${product.name} added to cart!`);
+  };
+
   // --- Render the Product Details ---
   return (
     <div className="max-w-4xl mx-auto">
@@ -71,7 +81,9 @@ export default function ProductDetailPage() {
             <span className="text-gray-500 ml-2">/ per unit</span>
           </div>
 
-          <button className="w-full bg-purple-600 text-white font-bold py-3 px-6 rounded-lg shadow hover:bg-purple-700 transition duration-300">
+          <button 
+          onClick={handleAddToCart}
+          className="w-full bg-purple-600 text-white font-bold py-3 px-6 rounded-lg shadow hover:bg-purple-700 transition duration-300">
             Add to Cart
           </button>
 
