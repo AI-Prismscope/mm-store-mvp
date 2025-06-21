@@ -4,6 +4,7 @@ import { Routes, Route } from 'react-router-dom';
 // 👇 Import the new components
 import HomepageLayout from './layouts/HomepageLayout';
 import ShopPage from './pages/ShopPage';
+import SearchResultsPage from './pages/SearchResultsPage';
 
 // (Keep your other page and component imports)
 import RootLayout from './layouts/RootLayout'; // We might still use this for other pages
@@ -26,7 +27,8 @@ export default function App() {
       {/* Homepage Layout (no change) */}
       <Route element={<HomepageLayout />}>
         <Route path="/" element={<ShopPage />} />
-        <Route path="/product/:id" element={<ProductDetailPage />} /> 
+        <Route path="/product/:id" element={<ProductDetailPage />} />
+        <Route path="/search" element={<SearchResultsPage />} />
       </Route>
       
       {/* --- NEW: PROTECTED APP LAYOUT --- */}

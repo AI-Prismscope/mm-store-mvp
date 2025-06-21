@@ -1,6 +1,7 @@
 // src/components/Navbar.jsx
 
 import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 
@@ -22,10 +23,18 @@ export default function Navbar() {
   const { user, logout } = useAuth();
   const { cartItemCount } = useCart();
   const navigate = useNavigate();
+  const [query, setQuery] = useState('');
 
   const handleLogout = async () => {
     await logout();
     navigate('/login');
+  };
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (query.trim()) {
+      navigate(`/search?q=${query}`);
+    }
   };
 
   return (
@@ -41,9 +50,27 @@ export default function Navbar() {
           </div>
 
           {/* Center: Search Bar (no changes) */}
-          <div className="flex-1 flex justify-center px-2 lg:ml-6 lg:justify-end">
-            {/* ... search bar jsx ... */}
-          </div>
+          <form onSubmit={handleSearchSubmit} className="flex-1 flex justify-center px-2 lg:ml-6 lg:justify-end">
+            <div className="max-w-lg w-full">
+              <label htmlFor="search" className="sr-only">
+                Search
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <SearchIcon />
+                </div>
+                <input
+                  id="search"
+                  name="search"
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                  placeholder="Search"
+                  type="search"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                />
+              </div>
+            </div>
+          </form>
 
           {/* Right Side: Navigation & Auth */}
           <div className="flex items-center space-x-6">

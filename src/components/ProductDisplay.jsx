@@ -1,10 +1,10 @@
-// src/components/ProductDisplay.jsx
+// The complete code for: src/components/ProductDisplay.jsx
 
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabaseClient'; // Import our Supabase client
-import ProductCard from './ProductCard'; // Import the card component we just made
+import { supabase } from '../lib/supabaseClient';
+import ProductCard from './ProductCard'; // It uses the same ProductCard
 
-// A helper component for a single product row to keep our main component clean
+// This is a helper component specifically for a single, horizontally-scrolling row.
 const ProductRow = ({ title, description, products }) => (
   <section className="mb-12">
     <div className="flex justify-between items-center mb-4">
@@ -12,14 +12,19 @@ const ProductRow = ({ title, description, products }) => (
         <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
         {description && <p className="text-sm text-gray-500 mt-1">{description}</p>}
       </div>
-      <a href="#" className="text-sm font-semibold text-purple-600 hover:text-purple-800">View all →</a>
+      <a href="#" className="text-sm font-semibold text-purple-600 hover:text-purple-800 whitespace-nowrap">
+        View all →
+      </a>
     </div>
     
-    {/* This container enables horizontal scrolling */}
-    <div className="flex space-x-4 overflow-x-auto pb-4">
-      {products.map(product => (
+    {/* This is the key layout: a flex container that allows horizontal scrolling */}
+    <div className="flex space-x-6 overflow-x-auto pb-4 -mb-4">
+      {products && products.map(product => (
         <ProductCard key={product.id} product={product} />
       ))}
+      {(!products || products.length === 0) && (
+        <p className="text-gray-500">No products to display in this section.</p>
+      )}
     </div>
   </section>
 );
@@ -32,11 +37,10 @@ export default function ProductDisplay() {
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
-      // Fetch all products from our Supabase table
       const { data, error } = await supabase
         .from('products')
         .select('*')
-        .order('created_at', { ascending: false }); // Show newest first
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error("Error fetching products:", error);
@@ -53,9 +57,9 @@ export default function ProductDisplay() {
     return <p>Loading products...</p>;
   }
 
-  // For the MVP, we'll just split the fetched products into two example rows.
-  const orderAgainProducts = products.slice(0, 6);
-  const latestRescuesProducts = products.slice(6, 12);
+  // For the MVP, we'll split the fetched products into two example rows.
+  const orderAgainProducts = products.slice(0, 8);
+  const latestRescuesProducts = products.slice(8, 16);
 
   return (
     <div className="w-full">
@@ -65,7 +69,7 @@ export default function ProductDisplay() {
       />
       <ProductRow 
         title="Shop Our Latest Rescues" 
-        description="A little unusual, a lot planet-friendly. These groceries were rescued for being too big, too small, or just too different. Help keep them out of the landfill."
+        description="A little unusual, a lot planet-friendly. These groceries were rescued for being too big, too small, or just too different."
         products={latestRescuesProducts} 
       />
     </div>
