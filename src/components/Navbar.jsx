@@ -1,7 +1,7 @@
 // src/components/Navbar.jsx
 
+import { useState, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 
@@ -21,9 +21,39 @@ const CartIcon = () => (
 
 export default function Navbar() {
   const { user, logout } = useAuth();
-  const { cartItemCount } = useCart();
+  const { cartItemCount, addItemToCart } = useCart();
   const navigate = useNavigate();
-  const [query, setQuery] = useState('');
+
+  // --- NEW STATE for Search ---
+  const [query, setQuery] = useState('');                 // The text in the input box
+  const [results, setResults] = useState([]);             // The results for the preview dropdown
+  const [isSearching, setIsSearching] = useState(false);  // A loading state for the preview
+
+  // --- NEW EFFECT for Debounced Search ---
+  useEffect(() => {
+    // Don't search if the query is empty
+    if (query.trim() === '') {
+      setResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+
+    // This is our debounce timer. We'll wait 300ms after the user stops typing.
+    const searchTimer = setTimeout(() => {
+      fetch(`/.netlify/functions/product-search?q=${query}`)
+        .then(res => res.json())
+        .then(data => {
+          setResults(data);
+        })
+        .catch(err => console.error("Search preview error:", err))
+        .finally(() => setIsSearching(false));
+    }, 300);
+
+    // Cleanup function: This cancels the timer if the user types again
+    return () => clearTimeout(searchTimer);
+
+  }, [query]); // This effect re-runs every time the `query` state changes
 
   const handleLogout = async () => {
     await logout();
@@ -33,8 +63,19 @@ export default function Navbar() {
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (query.trim()) {
+      setResults([]); // Clear the preview results
+      setQuery('');     // Clear the search bar
       navigate(`/search?q=${query}`);
     }
+  };
+
+  const handleQuickAdd = (e, product) => {
+    e.preventDefault();
+    e.stopPropagation();
+    addItemToCart(product.id);
+    alert(`${product.name} added to cart!`);
+    setResults([]); // Close preview after adding
+    setQuery('');   // Clear the search bar
   };
 
   return (
@@ -49,28 +90,46 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Center: Search Bar (no changes) */}
-          <form onSubmit={handleSearchSubmit} className="flex-1 flex justify-center px-2 lg:ml-6 lg:justify-end">
-            <div className="max-w-lg w-full">
-              <label htmlFor="search" className="sr-only">
-                Search
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <SearchIcon />
+          {/* Center: Search Bar with Live Preview */}
+          <div className="flex-1 flex justify-center px-2 lg:ml-6 lg:justify-end">
+            <div className="max-w-lg w-full lg:max-w-xs relative">
+              <form onSubmit={handleSearchSubmit}>
+                <label htmlFor="search" className="sr-only">Search</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <SearchIcon />
+                  </div>
+                  <input
+                    id="search"
+                    name="search"
+                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                    placeholder="Search for products..."
+                    type="search"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    autoComplete="off"
+                  />
                 </div>
-                <input
-                  id="search"
-                  name="search"
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
-                  placeholder="Search"
-                  type="search"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                />
-              </div>
+              </form>
+              
+              {/* The Live Search Preview Dropdown */}
+              {query && (results.length > 0 || isSearching) && (
+                <div className="absolute mt-1 w-full rounded-md bg-white shadow-lg z-50 border">
+                  <ul className="max-h-60 overflow-y-auto">
+                    {isSearching && <li className="px-4 py-2 text-sm text-gray-500">Searching...</li>}
+                    {!isSearching && results.map(product => (
+                      <li key={product.id}>
+                        <Link to={`/product/${product.id}`} className="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                          <span>{product.name}</span>
+                          <button onClick={(e) => handleQuickAdd(e, product)} className="ml-2 text-purple-600 font-bold">+</button>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
-          </form>
+          </div>
 
           {/* Right Side: Navigation & Auth */}
           <div className="flex items-center space-x-6">
