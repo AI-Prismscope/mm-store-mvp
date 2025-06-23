@@ -1,6 +1,8 @@
 // src/components/AisleNavigator.jsx
 
 import { NavLink } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabaseClient';
 
 // This is the helper function to apply conditional classes for active/inactive links
 const getNavLinkClass = ({ isActive }) => {
@@ -13,23 +15,32 @@ const getNavLinkClass = ({ isActive }) => {
   return `${commonClasses} text-gray-600 hover:bg-gray-100 hover:text-gray-900`;
 };
 
-
 export default function AisleNavigator() {
+  // Fetch aisle links from the database
+  const [aisleLinks, setAisleLinks] = useState([]);
+
+  useEffect(() => {
+    const fetchAisles = async () => {
+      const { data, error } = await supabase
+        .from('tags')
+        .select('name, slug')
+        .eq('type', 'aisle')
+        .order('name');
+      if (error) {
+        console.error('Error fetching aisle tags:', error);
+      } else {
+        setAisleLinks(data);
+      }
+    };
+    fetchAisles();
+  }, []);
+
   // For the MVP, we will hardcode the navigation items.
   // In the future, this data could come from an API.
   const curatedLinks = [
     { name: 'Featured', path: '/shop/featured' },
     { name: 'Buy It Again', path: '/shop/buy-it-again' },
     { name: 'Shop with Points', path: '/shop/points' },
-  ];
-
-  const aisleLinks = [
-    { name: 'Shop All', count: 1103, path: '/shop' },
-    { name: 'Fruit', count: 30, path: '/shop/fruit' },
-    { name: 'Vegetables', count: 87, path: '/shop/vegetables' },
-    { name: 'Meat & Seafood', count: 129, path: '/shop/meat-seafood' },
-    { name: 'Deli', count: 25, path: '/shop/deli' },
-    { name: 'Dairy & Eggs', count: 100, path: '/shop/dairy-eggs' },
   ];
 
   return (
@@ -63,12 +74,16 @@ export default function AisleNavigator() {
             Aisles
           </h3>
           <div className="mt-2 space-y-1">
+            <NavLink to="/" className={getNavLinkClass} end>
+              <span>Shop All</span>
+            </NavLink>
             {aisleLinks.map((link) => (
-              <NavLink key={link.name} to={link.path} end={link.path === '/shop'} className={getNavLinkClass}>
-                <div className="flex justify-between items-center">
-                  <span>{link.name}</span>
-                  <span className="text-gray-500">{link.count}</span>
-                </div>
+              <NavLink
+                key={link.slug}
+                to={`/shop/${link.slug}`}
+                className={getNavLinkClass}
+              >
+                <span>{link.name}</span>
               </NavLink>
             ))}
           </div>

@@ -24,6 +24,8 @@ const PlusIcon = () => (
     return (
         <Link to={`/product/${product.id}`} className="group relative flex-shrink-0 w-48 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden hover:shadow-lg transition-shadow"
         >
+          <span aria-hidden="true" className="absolute inset-0" />
+
         <div className="group relative flex-shrink-0 w-48 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden hover:shadow-lg transition-shadow">
             <div className="relative w-full h-32 bg-gray-200">
             {/* We use a placeholder if no image_url is provided */}
@@ -36,10 +38,7 @@ const PlusIcon = () => (
             <div className="p-3">
             <h3 className="text-sm font-medium text-gray-800">
                 {/* We'll use a link here that could go to a product detail page in the future */}
-                <a href="#" className="focus:outline-none">
-                <span aria-hidden="true" className="absolute inset-0" />
                 {product.name}
-                </a>
             </h3>
             <p className="mt-1 text-lg font-semibold text-gray-900">${randomPrice}</p>
             </div>

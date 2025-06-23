@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom'; // Hook to read URL query params
 import { supabase } from '../lib/supabaseClient';
 import ProductCard from '../components/ProductCard'; // We reuse our existing ProductCard
+import ProductGrid from '../components/ProductGrid'; // 👈 Import the new grid
 
 export default function SearchResultsPage() {
   // useSearchParams is like useState, but for the URL query string (e.g., ?q=chicken)
@@ -53,20 +54,7 @@ export default function SearchResultsPage() {
       {error && <p className="text-red-500">Error: {error}</p>}
 
       {!loading && !error && (
-        <>
-          {results.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-              {results.map(product => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-16 px-4">
-              <h3 className="text-xl font-semibold text-gray-700">No Products Found</h3>
-              <p className="text-gray-500 mt-2">Please try a different search term.</p>
-            </div>
-          )}
-        </>
+        <ProductGrid products={results} />
       )}
     </div>
   );
