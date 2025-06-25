@@ -4,9 +4,12 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabaseClient';
 import PlannedRecipeCard from '../components/PlannedRecipeCard';
+import ShoppingListSummary from '../components/ShoppingListSummary';
+import { useCart } from '../context/CartContext';
 
 export default function MealPlanPage() {
   const { session } = useAuth();
+  const { addItemToCart } = useCart();
   const [cartItems, setCartItems] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [plannedRecipes, setPlannedRecipes] = useState([]);
@@ -91,31 +94,28 @@ export default function MealPlanPage() {
     }
   };
 
-  // --- Derived State for the Organized Cart View ---
-  const organizedCart = useMemo(() => {
-    if (plannedRecipes.length === 0) return { unassigned: cartItems };
-
-    const plannedRecipeIds = new Set(plannedRecipes.map(p => p.recipe_id));
-    const cartProductIds = new Set(cartItems.map(item => item.product_id));
-    let assignedProductIds = new Set();
-    
-    const structuredPlan = plannedRecipes.map(plan => {
-      const recipe = plan.recipes;
-      const ingredients = recipe.recipe_ingredients.map(ing => {
+  // --- NEW DATA PROCESSING LOGIC ---
+  const { assignedItems, unassignedItems } = useMemo(() => {
+    if (!plannedRecipes || plannedRecipes.length === 0) {
+      return { assignedItems: new Set(), unassignedItems: cartItems };
+    }
+    const assignedProductIds = new Set();
+    plannedRecipes.forEach(planItem => {
+      planItem.recipes.recipe_ingredients.forEach(ing => {
         assignedProductIds.add(ing.product_id);
-        return {
-          ...ing,
-          inCart: cartProductIds.has(ing.product_id)
-        };
       });
-      return { ...recipe, ingredients };
     });
-
-    const unassigned = cartItems.filter(item => !assignedProductIds.has(item.product_id));
-
-    return { planned: structuredPlan, unassigned };
+    const assigned = [];
+    const unassigned = [];
+    cartItems.forEach(cartItem => {
+      if (assignedProductIds.has(cartItem.product_id)) {
+        assigned.push(cartItem);
+      } else {
+        unassigned.push(cartItem);
+      }
+    });
+    return { assignedItems: assigned, unassignedItems: unassigned };
   }, [cartItems, plannedRecipes]);
-
 
   if (loading) return <div className="text-center p-8">Loading your plan...</div>;
 
@@ -170,7 +170,7 @@ export default function MealPlanPage() {
               )}
             </div>
           </div>
-          <div>
+          {/* <div>
             <h2 className="text-xl font-bold mb-4">Your Ingredients</h2>
             <div className="bg-white p-4 rounded-lg shadow-sm border">
               <ul className="space-y-2">
@@ -179,11 +179,16 @@ export default function MealPlanPage() {
                 ))}
               </ul>
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* --- Right Column: Meal Plan --- */}
-        <div className="md:col-span-2">
+        <div className="lg:col-span-2">
+          <ShoppingListSummary 
+            cartItems={cartItems} 
+            assignedItems={assignedItems}
+            unassignedItems={unassignedItems} 
+          />
           <h2 className="text-2xl font-bold mb-4">Your Meal Plan</h2>
           <div className="space-y-4">
             {plannedRecipes.length > 0 ? (
@@ -193,6 +198,7 @@ export default function MealPlanPage() {
                   planItem={planItem}
                   onRemove={handleRemoveFromPlan}
                   cartItems={cartItems}
+                  addItemToCart={addItemToCart}
                 />
               ))
             ) : (
@@ -203,11 +209,11 @@ export default function MealPlanPage() {
             )}
           </div>
 
-          {/* This is where the ingredient list will go next */}
+          {/* This is where the ingredient list will go next
           <h2 className="text-2xl font-bold mt-8 mb-4">Your Shopping List</h2>
           <div className="p-8 bg-gray-50 rounded-lg text-center text-gray-500">
             The organized ingredient list will be built here.
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

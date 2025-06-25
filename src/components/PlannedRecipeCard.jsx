@@ -1,5 +1,6 @@
 // src/components/PlannedRecipeCard.jsx
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 // A simple X icon for the close button
 const DeleteIcon = () => (
@@ -21,8 +22,8 @@ const MissingIcon = () => (
   </svg>
 );
 
-// The component now accepts `cartItems` as a prop
-export default function PlannedRecipeCard({ planItem, onRemove, cartItems }) {
+// The component now accepts `cartItems` and `addItemToCart` as props
+export default function PlannedRecipeCard({ planItem, onRemove, cartItems, addItemToCart }) {
   // `planItem` is the full row from our `meal_plan_recipes` table.
   // The actual recipe details are nested inside it.
   const recipe = planItem.recipes;
@@ -39,8 +40,9 @@ export default function PlannedRecipeCard({ planItem, onRemove, cartItems }) {
   }
 
   return (
-    <div onClick={() => setIsExpanded(!isExpanded)} className="bg-white p-4 rounded-lg shadow-md cursor-pointer">
-      <div className="flex items-center space-x-4">
+    <div className="bg-white p-4 rounded-lg shadow-md">
+      {/* Main card header part - we add a cursor and onClick to toggle expansion */}
+      <div onClick={() => setIsExpanded(!isExpanded)} className="flex items-center space-x-4 cursor-pointer">
         {/* Left Side: Square Image */}
         <div className="flex-shrink-0 w-20 h-20">
           <img 
@@ -76,18 +78,34 @@ export default function PlannedRecipeCard({ planItem, onRemove, cartItems }) {
             {recipe.recipe_ingredients.map((ing) => {
               const haveIt = cartProductIds.has(ing.product_id);
               return (
-                <li key={ing.id} className="flex items-center text-sm">
-                  {haveIt ? <CheckIcon /> : <MissingIcon />}
-                  <span className="ml-2 text-gray-800">
-                    {ing.quantity && `${ing.quantity} `}
-                    {ing.unit && `${ing.unit} `}
-                    {ing.products.name}
-                  </span>
-                  {!haveIt && (
-                    <span className="ml-3 text-xs font-semibold text-red-700 bg-red-100 px-2 py-0.5 rounded-full">
-                      Missing
+                <li key={ing.id} className="flex items-center justify-between text-sm group">
+                  {/* --- Left Side: Status Icon and Link to Detail Page --- */}
+                  <Link to={`/product/${ing.product_id}`} className="flex items-center flex-1 min-w-0">
+                    {haveIt ? <CheckIcon /> : <MissingIcon />}
+                    <span className="ml-2 text-gray-800 truncate group-hover:text-purple-600">
+                      {ing.quantity && `${ing.quantity} `}
+                      {ing.unit && `${ing.unit} `}
+                      {ing.products.name}
                     </span>
-                  )}
+                  </Link>
+                  {/* --- Right Side: "Missing" Tag and "Add" Button --- */}
+                  <div className="flex items-center flex-shrink-0 ml-3">
+                    {!haveIt && (
+                      <>
+                        <span className="text-xs font-semibold text-red-700 bg-red-100 px-2 py-0.5 rounded-full">
+                          Missing
+                        </span>
+                        {/* The "Quick Add" button - only shows if item is missing */}
+                        <button 
+                          onClick={() => addItemToCart(ing.product_id, 1)}
+                          className="ml-2 bg-green-100 text-green-800 rounded-full h-6 w-6 flex items-center justify-center hover:bg-green-200"
+                          title={`Add ${ing.products.name} to cart`}
+                        >
+                          <span className="font-bold text-lg">+</span>
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </li>
               );
             })}
