@@ -1,8 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext'; // 👈 ADD THIS LINE
-import { CartProvider } from './context/CartContext'; // 👈 Import
+import { AuthProvider } from './context/AuthContext';
+import { CartProvider } from './context/CartContext';
+import { UIProvider } from './context/UIContext';
 import App from './App.jsx';
 import './index.css';
 
@@ -11,7 +12,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <BrowserRouter>
       <AuthProvider>
         <CartProvider>
-          <App />
+          <UIProvider>
+            <App />
+          </UIProvider>
         </CartProvider>
       </AuthProvider>
     </BrowserRouter>

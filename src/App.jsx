@@ -16,32 +16,37 @@ import SignUpPage from './pages/SignUpPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import AppLayout from './layouts/AppLayout'; // 👈 Import AppLayout
 import RecipeDetailPage from './pages/RecipeDetailPage';
-import ProductDetailPage from './pages/ProductDetailPage';
+import { useUI } from './context/UIContext';
+import ProductDetailModal from './components/ProductDetailModal';
 
 export default function App() {
+  const { viewingProductId } = useUI();
   return (
-    <Routes>
-      {/* Public Auth Routes (no change) */}
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/signup" element={<SignUpPage />} />
+    <>
+      <Routes>
+        {/* Public Auth Routes (no change) */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignUpPage />} />
 
-      {/* Homepage Layout (no change) */}
-      <Route element={<HomepageLayout />}>
-        <Route path="/" element={<ShopPage />} />
-        <Route path="/product/:id" element={<ProductDetailPage />} />
-        <Route path="/search" element={<SearchResultsPage />} />
-        <Route path="/shop/:categorySlug" element={<CategoryPage />} />
-      </Route>
-      
-      {/* --- NEW: PROTECTED APP LAYOUT --- */}
-      {/* This wrapper provides the Navbar for our main app pages */}
-      <Route element={<ProtectedRoute />}>
-        <Route element={<AppLayout />}> {/* 👈 Use the new layout */}
-          <Route path="/my-recipes" element={<CookbookPage />} />
-          <Route path="/plan" element={<MealPlanPage />} />
-          <Route path="/recipe/:id" element={<RecipeDetailPage />} />
+        {/* Homepage Layout (no change) */}
+        <Route element={<HomepageLayout />}>
+          <Route path="/" element={<ShopPage />} />
+          <Route path="/search" element={<SearchResultsPage />} />
+          <Route path="/shop/:categorySlug" element={<CategoryPage />} />
         </Route>
-      </Route>
-    </Routes>
+        
+        {/* --- NEW: PROTECTED APP LAYOUT --- */}
+        {/* This wrapper provides the Navbar for our main app pages */}
+        <Route element={<ProtectedRoute />}>
+          <Route element={<AppLayout />}> {/* 👈 Use the new layout */}
+            <Route path="/my-recipes" element={<CookbookPage />} />
+            <Route path="/plan" element={<MealPlanPage />} />
+            <Route path="/recipe/:id" element={<RecipeDetailPage />} />
+          </Route>
+        </Route>
+      </Routes>
+      {/* Conditionally render the Product Detail Modal */}
+      {viewingProductId && <ProductDetailModal productId={viewingProductId} />}
+    </>
   );
 }

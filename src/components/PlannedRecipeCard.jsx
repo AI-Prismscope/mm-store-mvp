@@ -1,6 +1,6 @@
 // src/components/PlannedRecipeCard.jsx
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useUI } from '../context/UIContext';
 
 // A simple X icon for the close button
 const DeleteIcon = () => (
@@ -29,6 +29,7 @@ export default function PlannedRecipeCard({ planItem, onRemove, cartItems, addIt
   const recipe = planItem.recipes;
   const cartProductIds = new Set(cartItems.map(item => item.product_id));
   const [isExpanded, setIsExpanded] = useState(false);
+  const { openProductModal } = useUI();
 
   // This prevents the app from crashing if the recipe data is somehow missing
   if (!recipe) {
@@ -79,15 +80,19 @@ export default function PlannedRecipeCard({ planItem, onRemove, cartItems, addIt
               const haveIt = cartProductIds.has(ing.product_id);
               return (
                 <li key={ing.id} className="flex items-center justify-between text-sm group">
-                  {/* --- Left Side: Status Icon and Link to Detail Page --- */}
-                  <Link to={`/product/${ing.product_id}`} className="flex items-center flex-1 min-w-0">
+                  {/* --- Left Side: Status Icon and Modal Trigger --- */}
+                  <button
+                    type="button"
+                    onClick={() => openProductModal(ing.product_id)}
+                    className="flex items-center flex-1 min-w-0 text-left focus:outline-none"
+                  >
                     {haveIt ? <CheckIcon /> : <MissingIcon />}
                     <span className="ml-2 text-gray-800 truncate group-hover:text-purple-600">
                       {ing.quantity && `${ing.quantity} `}
                       {ing.unit && `${ing.unit} `}
                       {ing.products.name}
                     </span>
-                  </Link>
+                  </button>
                   {/* --- Right Side: "Missing" Tag and "Add" Button --- */}
                   <div className="flex items-center flex-shrink-0 ml-3">
                     {!haveIt && (
@@ -95,7 +100,6 @@ export default function PlannedRecipeCard({ planItem, onRemove, cartItems, addIt
                         <span className="text-xs font-semibold text-red-700 bg-red-100 px-2 py-0.5 rounded-full">
                           Missing
                         </span>
-                        {/* The "Quick Add" button - only shows if item is missing */}
                         <button 
                           onClick={() => addItemToCart(ing.product_id, 1)}
                           className="ml-2 bg-green-100 text-green-800 rounded-full h-6 w-6 flex items-center justify-center hover:bg-green-200"
