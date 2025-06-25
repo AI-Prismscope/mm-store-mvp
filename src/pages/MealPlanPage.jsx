@@ -141,14 +141,33 @@ export default function MealPlanPage() {
             <h2 className="text-xl font-bold mb-4">Recipe Suggestions</h2>
             <div className="space-y-3">
               {suggestions.map(recipe => (
-                <div key={recipe.id} className="bg-white p-4 rounded-lg shadow-sm border">
-                  <p className="font-semibold">{recipe.name}</p>
-                  <p className="text-sm text-gray-500">Matches: {recipe.matchCount}, Missing: {recipe.gapCount}</p>
-                  <button onClick={() => handleAddToPlan(recipe.id)} className="mt-2 text-sm bg-purple-600 text-white px-3 py-1 rounded-md hover:bg-purple-700">
-                    + Add to Plan
+                <div key={recipe.id} className="bg-white p-2 rounded-lg shadow flex items-center space-x-3">
+                  <div className="flex-shrink-0 w-16 h-16">
+                    <img 
+                      src={recipe.image_url || 'https://via.placeholder.com/150'}
+                      alt={recipe.name}
+                      className="w-full h-full object-cover rounded-md"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-sm leading-tight text-gray-800">{recipe.name}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Matches: <span className="font-medium text-green-600">{recipe.matchCount}</span>, 
+                      Missing: <span className="font-medium text-red-600">{recipe.gapCount}</span>
+                    </p>
+                  </div>
+                  <button 
+                    onClick={() => handleAddToPlan(recipe.id)} 
+                    className="flex-shrink-0 bg-purple-100 text-purple-700 h-8 w-8 flex items-center justify-center rounded-full hover:bg-purple-200"
+                    title="Add to Plan"
+                  >
+                    <span className="text-xl font-bold">+</span>
                   </button>
                 </div>
               ))}
+              {suggestions.length === 0 && !loading && (
+                <p className="text-sm text-gray-500 text-center">No suggestions for your current cart.</p>
+              )}
             </div>
           </div>
           <div>
