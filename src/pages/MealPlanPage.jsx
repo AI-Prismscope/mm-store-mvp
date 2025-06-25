@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabaseClient';
+import PlannedRecipeCard from '../components/PlannedRecipeCard';
 
 export default function MealPlanPage() {
   const { session } = useAuth();
@@ -70,6 +71,24 @@ export default function MealPlanPage() {
   const handleResetCart = async () => {
     await fetch('/.netlify/functions/cart-reset', { method: 'POST', headers: { 'Authorization': `Bearer ${session.access_token}` } });
     loadData(); // Reload all data
+  };
+
+  // --- NEW: Remove from Plan Handler ---
+  const handleRemoveFromPlan = async (planItemId) => {
+    if (!window.confirm("Are you sure you want to remove this recipe from your plan?")) {
+      return;
+    }
+    const { error } = await supabase
+      .from('meal_plan_recipes')
+      .delete()
+      .eq('id', planItemId);
+    if (error) {
+      console.error("Error removing from plan:", error);
+      alert("Could not remove the recipe. Please try again.");
+    } else {
+      console.log("Recipe removed from plan successfully.");
+      loadData();
+    }
   };
 
   // --- Derived State for the Organized Cart View ---
@@ -144,37 +163,31 @@ export default function MealPlanPage() {
           </div>
         </div>
 
-        {/* --- Right Column: The Organized Meal Plan --- */}
-        <div className="lg:col-span-2">
-          <h2 className="text-xl font-bold mb-4">The Plan</h2>
-          <div className="space-y-6">
-            {organizedCart.planned?.map(recipe => (
-              <div key={recipe.id} className="bg-white p-6 rounded-lg shadow-md border">
-                <h3 className="text-lg font-bold mb-3">{recipe.name}</h3>
-                <ul>
-                  {recipe.ingredients.map(ing => (
-                    <li key={ing.id} className="flex items-center space-x-3 py-1">
-                      {ing.inCart ? (
-                        <span className="text-green-500">✓</span>
-                      ) : (
-                        <span className="text-red-500 font-bold">!</span>
-                      )}
-                      <span>{`${ing.quantity || ''} ${ing.unit || ''} ${ing.products.name}`}</span>
-                      {!ing.inCart && <span className="text-xs text-red-600 bg-red-100 px-2 py-0.5 rounded-full">Missing</span>}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-            {organizedCart.unassigned.length > 0 && (
-              <div className="bg-gray-100 p-4 rounded-lg">
-                <h3 className="font-bold mb-2">Unassigned Items</h3>
-                <ul className="text-sm text-gray-600">
-                  {organizedCart.unassigned.map(item => <li key={item.id}>- {item.products.name}</li>)}
-                </ul>
+        {/* --- Right Column: Meal Plan --- */}
+        <div className="md:col-span-2">
+          <h2 className="text-2xl font-bold mb-4">Your Meal Plan</h2>
+          <div className="space-y-4">
+            {plannedRecipes.length > 0 ? (
+              plannedRecipes.map(planItem => (
+                <PlannedRecipeCard
+                  key={planItem.id}
+                  planItem={planItem}
+                  onRemove={handleRemoveFromPlan}
+                  cartItems={cartItems}
+                />
+              ))
+            ) : (
+              <div className="text-center p-8 bg-gray-50 rounded-lg">
+                <p className="text-gray-500">Your meal plan is empty.</p>
+                <p className="text-gray-500">Add a recipe from the suggestions to get started!</p>
               </div>
             )}
-            {plannedRecipes.length === 0 && <p className="text-gray-500">Add a recipe from the suggestions to start building your plan!</p>}
+          </div>
+
+          {/* This is where the ingredient list will go next */}
+          <h2 className="text-2xl font-bold mt-8 mb-4">Your Shopping List</h2>
+          <div className="p-8 bg-gray-50 rounded-lg text-center text-gray-500">
+            The organized ingredient list will be built here.
           </div>
         </div>
       </div>
