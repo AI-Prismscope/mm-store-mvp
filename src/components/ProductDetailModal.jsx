@@ -41,7 +41,9 @@ export default function ProductDetailModal({ productId }) {
             </div>
             <div className="flex flex-col justify-center">
               <h1 className="text-4xl font-bold capitalize">{product.name}</h1>
-              <div className="my-6"><span className="text-3xl font-bold">$X.XX</span></div>
+              <div className="my-6"><span className="text-3xl font-bold text-gray-900">
+                ${product.price ? product.price.toFixed(2) : 'Price not available'}
+              </span></div>
               <button onClick={handleAddToCart} className="w-full bg-purple-600 text-white font-bold py-3 rounded-lg">Add to Cart</button>
               <div className="mt-6">
                 <h3 className="font-semibold">Description</h3>

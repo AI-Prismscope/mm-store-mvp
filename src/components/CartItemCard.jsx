@@ -26,7 +26,9 @@ export default function CartItemCard({ item }) {
       {/* Item Details */}
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-sm text-gray-800 truncate">{item.products.name}</p>
-        <p className="text-sm text-gray-500">$X.XX</p> {/* Placeholder for price */}
+        <p className="text-sm text-gray-500">
+          ${item.products.price ? item.products.price.toFixed(2) : 'N/A'}
+        </p>
       </div>
 
       {/* Quantity Stepper & Delete Button */}

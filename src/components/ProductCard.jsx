@@ -37,7 +37,9 @@ const PlusIcon = () => (
           <h3 className="text-sm font-medium text-gray-800">
             {product.name}
           </h3>
-          <p className="mt-1 text-lg font-semibold text-gray-900">${randomPrice}</p>
+          <p className="mt-1 text-lg font-semibold text-gray-900">
+            ${product.price ? product.price.toFixed(2) : 'N/A'}
+          </p>
         </div>
         <button
           onClick={handleAddToCart}

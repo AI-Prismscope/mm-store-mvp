@@ -1,6 +1,6 @@
 // src/context/CartContext.jsx
 
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from './AuthContext'; // We need the user's session
 import { supabase } from '../lib/supabaseClient';
 
@@ -25,7 +25,14 @@ export function CartProvider({ children }) {
         .from('cart_items')
         .select('*, products(*)'); // Fetch cart items and their product details
       if (error) throw error;
-      setCart(data || []);
+      const rawCart = data || [];
+      // Sort alphabetically by product name
+      rawCart.sort((a, b) => {
+        const nameA = a.products?.name || '';
+        const nameB = b.products?.name || '';
+        return nameA.localeCompare(nameB);
+      });
+      setCart(rawCart);
     } catch (error) {
       console.error("Error fetching cart:", error);
     } finally {
@@ -38,8 +45,8 @@ export function CartProvider({ children }) {
     fetchCart();
   }, [fetchCart]);
 
-  // --- NEW FUNCTION 1: Add or Update an Item ---
-  // This calls the `cart-add-item` function we built, which handles upsert logic.
+  // --- FUNCTION 1: Add or Update an Item ---
+  // For MVP, keep refetch after add (since we don't know the new item's id)
   const addItemToCart = async (productId, quantity = 1) => {
     if (!session) return;
     try {
@@ -52,18 +59,17 @@ export function CartProvider({ children }) {
         body: JSON.stringify({ product_id: productId, quantity: quantity }),
       });
       if (!response.ok) throw new Error('Failed to add item to cart.');
-      
-      // On success, refetch the cart to show the new item/quantity.
       await fetchCart();
     } catch (error) {
       console.error("Error adding item to cart:", error);
     }
   };
 
-  // --- NEW FUNCTION 2: Remove an Item ---
-  // This calls the `cart-remove-item` function.
+  // --- FUNCTION 2: Remove an Item (Optimistic UI) ---
   const removeItemFromCart = async (cartItemId) => {
     if (!session) return;
+    const originalCart = [...cart];
+    setCart(prevCart => prevCart.filter(item => item.id !== cartItemId));
     try {
       const response = await fetch('/.netlify/functions/cart-remove-item', {
         method: 'POST',
@@ -74,18 +80,22 @@ export function CartProvider({ children }) {
         body: JSON.stringify({ cart_item_id: cartItemId }),
       });
       if (!response.ok) throw new Error('Failed to remove item from cart.');
-      
-      // On success, refetch the cart.
-      await fetchCart();
     } catch (error) {
+      setCart(originalCart);
+      alert("Could not remove item. Please try again.");
       console.error("Error removing item from cart:", error);
     }
   };
 
-  // --- NEW FUNCTION 3: Update an Item's Quantity ---
-  // This calls the `cart-update-quantity` function.
+  // --- FUNCTION 3: Update an Item's Quantity (Optimistic UI) ---
   const updateItemQuantity = async (cartItemId, newQuantity) => {
     if (!session) return;
+    const originalCart = [...cart];
+    setCart(prevCart =>
+      newQuantity <= 0
+        ? prevCart.filter(item => item.id !== cartItemId)
+        : prevCart.map(item => item.id === cartItemId ? { ...item, quantity: newQuantity } : item)
+    );
     try {
       const response = await fetch('/.netlify/functions/cart-update-quantity', {
         method: 'POST',
@@ -96,19 +106,31 @@ export function CartProvider({ children }) {
         body: JSON.stringify({ cart_item_id: cartItemId, new_quantity: newQuantity }),
       });
       if (!response.ok) throw new Error('Failed to update quantity.');
-      
-      // On success, refetch the cart.
-      await fetchCart();
     } catch (error) {
+      setCart(originalCart);
+      alert("Could not update item quantity. Please try again.");
       console.error("Error updating quantity:", error);
     }
   };
+
+  // 👇 --- NEW: Calculate Subtotal using useMemo for efficiency --- 👇
+  // This calculation will only re-run when the `cart` array changes.
+  const cartSubtotal = useMemo(() => {
+    // The .reduce() method is perfect for summing up values in an array.
+    return cart.reduce((total, item) => {
+      // For each item, multiply its price by its quantity and add it to the total.
+      // We add a check to handle cases where a product or its price might be missing.
+      const itemPrice = item.products?.price || 0;
+      return total + (itemPrice * item.quantity);
+    }, 0); // The 0 here is the starting value for our total.
+  }, [cart]);
 
   // The value object provided to all consuming components.
   // We now expose all our new functions.
   const value = {
     cart,
     cartItemCount: cart.reduce((total, item) => total + item.quantity, 0), // A more accurate item count
+    cartSubtotal, // 👈 Expose the new subtotal value
     loading,
     addItemToCart,
     removeItemFromCart,

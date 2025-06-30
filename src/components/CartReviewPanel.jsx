@@ -7,7 +7,7 @@ const CloseIcon = () => ( <svg className="h-6 w-6" fill="none" viewBox="0 0 24 2
 export default function CartReviewPanel() {
   const { isCartOpen, closeCart } = useUI();
   // Get all the data and state from our CartContext
-  const { cart, loading: cartLoading, cartItemCount } = useCart();
+  const { cart, loading: cartLoading, cartItemCount, cartSubtotal } = useCart();
 
   if (!isCartOpen) {
     return null;
@@ -48,7 +48,7 @@ export default function CartReviewPanel() {
         <div className="p-4 border-t bg-gray-50">
           <div className="flex justify-between text-lg font-semibold mb-4">
             <span>Subtotal</span>
-            <span>$XX.XX</span>
+            <span>${cartSubtotal.toFixed(2)}</span>
           </div>
           <button className="w-full bg-purple-600 text-white font-bold py-3 rounded-lg hover:bg-purple-700">
             Proceed to Checkout
