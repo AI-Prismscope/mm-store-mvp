@@ -1,6 +1,7 @@
 // src/components/PlannedRecipeCard.jsx
 import { useState } from 'react';
 import { useUI } from '../context/UIContext';
+import { useCart } from '../context/CartContext';
 
 // A simple X icon for the close button
 const DeleteIcon = () => (
@@ -23,7 +24,8 @@ const MissingIcon = () => (
 );
 
 // The component now accepts `cartItems` and `addItemToCart` as props
-export default function PlannedRecipeCard({ planItem, onRemove, cartItems, addItemToCart }) {
+export default function PlannedRecipeCard({ planItem, onRemove, cartItems }) {
+  const { addItemToCart } = useCart();
   // `planItem` is the full row from our `meal_plan_recipes` table.
   // The actual recipe details are nested inside it.
   const recipe = planItem.recipes;

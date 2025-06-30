@@ -9,95 +9,54 @@ import { useCart } from '../context/CartContext';
 
 export default function MealPlanPage() {
   const { session } = useAuth();
-  const { addItemToCart } = useCart();
-  const [cartItems, setCartItems] = useState([]);
+  const { cart, loading: cartLoading, refetchCart } = useCart();
   const [suggestions, setSuggestions] = useState([]);
   const [plannedRecipes, setPlannedRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // --- Data Fetching Logic (mostly unchanged) ---
-  const loadData = async () => {
+  const loadPageData = async () => {
     setLoading(true);
-    // 1. Get cart items. If empty, reset and fetch again.
-    let { data: itemsData } = await supabase.from('cart_items').select('*, products(*)');
-    if (itemsData && itemsData.length === 0) {
+
+    let { data: items } = await supabase.from('cart_items').select('*, products(*)');
+    if (items && items.length === 0) {
       await fetch('/.netlify/functions/cart-reset', { method: 'POST', headers: { 'Authorization': `Bearer ${session.access_token}` } });
-      const { data: newItems } = await supabase.from('cart_items').select('*, products(*)');
-      itemsData = newItems || [];
+      await refetchCart();
+    } else {
+      refetchCart();
     }
-    setCartItems(itemsData || []);
-
-    // 2. Get recipe suggestions
-    const sugRes = await fetch('/.netlify/functions/suggest-recipes', { method: 'POST', headers: { 'Authorization': `Bearer ${session.access_token}` } });
-    const sugData = await sugRes.json();
-    setSuggestions(sugData || []);
     
-    // 3. Get currently planned recipes
-    const { data: planData } = await supabase.from('meal_plan_recipes').select('*, recipes(*, recipe_ingredients(*, products(*)))');
-    setPlannedRecipes(planData || []);
-
+    const [sugRes, planRes] = await Promise.all([
+      fetch('/.netlify/functions/suggest-recipes', { method: 'POST', headers: { 'Authorization': `Bearer ${session.access_token}` } }),
+      supabase.from('meal_plan_recipes').select('*, recipes(*, recipe_ingredients(*, products(*)))')
+    ]);
+    
+    const sugData = await sugRes.json();
+    setSuggestions(sugData);
+    setPlannedRecipes(planRes.data || []);
+    
     setLoading(false);
   };
 
   useEffect(() => {
     if (session) {
-      loadData();
+      loadPageData();
     }
   }, [session]);
 
-  // --- User Actions ---
   const handleAddToPlan = async (recipeId) => {
-    // Safety check: Don't do anything if the user isn't logged in
-    if (!session?.user) {
-      alert("Please log in to add recipes to your plan.");
-      return;
-    }
-
-    // THE FIX: We now explicitly include the user_id in the object we're inserting.
-    const { error } = await supabase
-      .from('meal_plan_recipes')
-      .insert({
-        recipe_id: recipeId,
-        user_id: session.user.id // 👈 This is the crucial line
-      });
-
-    if (error) {
-      console.error("Error adding to plan:", error);
-      alert(`Could not add recipe to your plan. Error: ${error.message}`);
-    } else {
-      console.log('Successfully added to plan!');
-      // Reload all data to reflect the change
-      loadData();
-    }
+    await supabase.from('meal_plan_recipes').insert({ recipe_id: recipeId });
+    loadPageData();
   };
 
-  const handleResetCart = async () => {
-    await fetch('/.netlify/functions/cart-reset', { method: 'POST', headers: { 'Authorization': `Bearer ${session.access_token}` } });
-    loadData(); // Reload all data
-  };
-
-  // --- NEW: Remove from Plan Handler ---
   const handleRemoveFromPlan = async (planItemId) => {
-    if (!window.confirm("Are you sure you want to remove this recipe from your plan?")) {
-      return;
-    }
-    const { error } = await supabase
-      .from('meal_plan_recipes')
-      .delete()
-      .eq('id', planItemId);
-    if (error) {
-      console.error("Error removing from plan:", error);
-      alert("Could not remove the recipe. Please try again.");
-    } else {
-      console.log("Recipe removed from plan successfully.");
-      loadData();
-    }
+    if (!window.confirm("Are you sure?")) return;
+    await supabase.from('meal_plan_recipes').delete().eq('id', planItemId);
+    loadPageData();
   };
 
-  // --- NEW DATA PROCESSING LOGIC ---
   const { assignedItems, unassignedItems } = useMemo(() => {
     if (!plannedRecipes || plannedRecipes.length === 0) {
-      return { assignedItems: new Set(), unassignedItems: cartItems };
+      return { assignedItems: new Set(), unassignedItems: cart };
     }
     const assignedProductIds = new Set();
     plannedRecipes.forEach(planItem => {
@@ -107,7 +66,7 @@ export default function MealPlanPage() {
     });
     const assigned = [];
     const unassigned = [];
-    cartItems.forEach(cartItem => {
+    cart.forEach(cartItem => {
       if (assignedProductIds.has(cartItem.product_id)) {
         assigned.push(cartItem);
       } else {
@@ -115,27 +74,24 @@ export default function MealPlanPage() {
       }
     });
     return { assignedItems: assigned, unassignedItems: unassigned };
-  }, [cartItems, plannedRecipes]);
+  }, [cart, plannedRecipes]);
 
   if (loading) return <div className="text-center p-8">Loading your plan...</div>;
 
   return (
     <div>
-      {/* Page Header */}
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Your Weekly Meal Plan</h1>
         <button
-          onClick={handleResetCart}
+          onClick={async () => { await fetch('/.netlify/functions/cart-reset', { method: 'POST', headers: { 'Authorization': `Bearer ${session.access_token}` } }); await refetchCart(); loadPageData(); }}
           className="bg-red-500 text-white font-semibold py-2 px-4 rounded-lg shadow hover:bg-red-600 transition"
         >
           Get New Ingredients
         </button>
       </div>
 
-      {/* Main Two-Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-        {/* --- Left Column: Suggestions & Cart --- */}
         <div className="lg:col-span-1 space-y-6">
           <div>
             <h2 className="text-xl font-bold mb-4">Recipe Suggestions</h2>
@@ -170,22 +126,11 @@ export default function MealPlanPage() {
               )}
             </div>
           </div>
-          {/* <div>
-            <h2 className="text-xl font-bold mb-4">Your Ingredients</h2>
-            <div className="bg-white p-4 rounded-lg shadow-sm border">
-              <ul className="space-y-2">
-                {cartItems.map(item => (
-                  <li key={item.id} className="text-gray-700">{item.products.name}</li>
-                ))}
-              </ul>
-            </div>
-          </div> */}
         </div>
 
-        {/* --- Right Column: Meal Plan --- */}
         <div className="lg:col-span-2">
           <ShoppingListSummary 
-            cartItems={cartItems} 
+            cartItems={cart}
             assignedItems={assignedItems}
             unassignedItems={unassignedItems} 
           />
@@ -197,23 +142,13 @@ export default function MealPlanPage() {
                   key={planItem.id}
                   planItem={planItem}
                   onRemove={handleRemoveFromPlan}
-                  cartItems={cartItems}
-                  addItemToCart={addItemToCart}
+                  cartItems={cart}
                 />
               ))
             ) : (
-              <div className="text-center p-8 bg-gray-50 rounded-lg">
-                <p className="text-gray-500">Your meal plan is empty.</p>
-                <p className="text-gray-500">Add a recipe from the suggestions to get started!</p>
-              </div>
+              <p className="text-gray-500">No recipes planned yet.</p>
             )}
           </div>
-
-          {/* This is where the ingredient list will go next
-          <h2 className="text-2xl font-bold mt-8 mb-4">Your Shopping List</h2>
-          <div className="p-8 bg-gray-50 rounded-lg text-center text-gray-500">
-            The organized ingredient list will be built here.
-          </div> */}
         </div>
       </div>
     </div>
