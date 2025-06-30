@@ -25,11 +25,15 @@ const MissingIcon = () => (
 
 // The component now accepts `cartItems` and `addItemToCart` as props
 export default function PlannedRecipeCard({ planItem, onRemove, cartItems }) {
-  const { addItemToCart } = useCart();
+  const { addItemToCart, cart } = useCart();
   // `planItem` is the full row from our `meal_plan_recipes` table.
   // The actual recipe details are nested inside it.
   const recipe = planItem.recipes;
-  const cartProductIds = new Set(cartItems.map(item => item.product_id));
+
+  // --- QUANTITY-AWARE LOGIC ---
+  // Map product_id to quantity in cart
+  const cartQuantityMap = new Map(cart.map(item => [item.product_id, item.quantity]));
+
   const [isExpanded, setIsExpanded] = useState(false);
   const { openProductModal } = useUI();
 
@@ -79,33 +83,34 @@ export default function PlannedRecipeCard({ planItem, onRemove, cartItems }) {
           <h4 className="font-semibold mb-2 text-gray-700">Ingredients Needed:</h4>
           <ul className="space-y-2">
             {recipe.recipe_ingredients.map((ing) => {
-              const haveIt = cartProductIds.has(ing.product_id);
+              // --- The New Check ---
+              const quantityInCart = cartQuantityMap.get(ing.product_id) || 0;
+              const quantityNeeded = ing.quantity || 0;
+              const haveEnough = quantityInCart >= quantityNeeded;
               return (
                 <li key={ing.id} className="flex items-center justify-between text-sm group">
-                  {/* --- Left Side: Status Icon and Modal Trigger --- */}
                   <button
                     type="button"
                     onClick={() => openProductModal(ing.product_id)}
                     className="flex items-center flex-1 min-w-0 text-left focus:outline-none"
                   >
-                    {haveIt ? <CheckIcon /> : <MissingIcon />}
+                    {haveEnough ? <CheckIcon /> : <MissingIcon />}
                     <span className="ml-2 text-gray-800 truncate group-hover:text-purple-600">
                       {ing.quantity && `${ing.quantity} `}
                       {ing.unit && `${ing.unit} `}
                       {ing.products.name}
                     </span>
                   </button>
-                  {/* --- Right Side: "Missing" Tag and "Add" Button --- */}
                   <div className="flex items-center flex-shrink-0 ml-3">
-                    {!haveIt && (
+                    {!haveEnough && (
                       <>
                         <span className="text-xs font-semibold text-red-700 bg-red-100 px-2 py-0.5 rounded-full">
                           Missing
                         </span>
                         <button 
-                          onClick={() => addItemToCart(ing.product_id, 1)}
+                          onClick={() => addItemToCart(ing.product_id, quantityNeeded - quantityInCart)}
                           className="ml-2 bg-green-100 text-green-800 rounded-full h-6 w-6 flex items-center justify-center hover:bg-green-200"
-                          title={`Add ${ing.products.name} to cart`}
+                          title={`Add remaining ${quantityNeeded - quantityInCart} to cart`}
                         >
                           <span className="font-bold text-lg">+</span>
                         </button>
