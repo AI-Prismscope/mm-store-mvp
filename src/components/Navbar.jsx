@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { useUI } from '../context/UIContext';
 
 // A simple search icon component
 const SearchIcon = () => (
@@ -22,6 +23,7 @@ const CartIcon = () => (
 export default function Navbar() {
   const { user, logout } = useAuth();
   const { cartItemCount, addItemToCart } = useCart();
+  const { openCart } = useUI();
   const navigate = useNavigate();
 
   // --- NEW STATE for Search ---
@@ -167,11 +169,13 @@ export default function Navbar() {
               </NavLink>
             )}
 
-            {/* Cart Button (no changes) */}
-            <button className="flex items-center space-x-2 bg-red-200 text-red-800 font-bold px-4 py-2 rounded-full text-sm">
+            {/* Cart Button */}
+            <button 
+              onClick={openCart}
+              className="flex items-center space-x-2 bg-red-200 text-red-800 font-bold px-4 py-2 rounded-full text-sm hover:bg-red-300"
+            >
               <CartIcon />
               <span>{cartItemCount}</span>
-              <span>INCOMPLETE</span>
             </button>
           </div>
 

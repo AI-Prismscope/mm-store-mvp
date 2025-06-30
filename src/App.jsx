@@ -18,6 +18,7 @@ import AppLayout from './layouts/AppLayout'; // 👈 Import AppLayout
 import RecipeDetailPage from './pages/RecipeDetailPage';
 import { useUI } from './context/UIContext';
 import ProductDetailModal from './components/ProductDetailModal';
+import CartReviewPanel from './components/CartReviewPanel';
 
 export default function App() {
   const { viewingProductId } = useUI();
@@ -47,6 +48,8 @@ export default function App() {
       </Routes>
       {/* Conditionally render the Product Detail Modal */}
       {viewingProductId && <ProductDetailModal productId={viewingProductId} />}
+      {/* Conditionally render the Cart Review Panel */}
+      <CartReviewPanel />
     </>
   );
 }

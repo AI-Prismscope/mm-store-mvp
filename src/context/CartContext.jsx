@@ -11,9 +11,14 @@ export function CartProvider({ children }) {
   const [cart, setCart] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // This function fetches the user's current cart items from the database
+  // This function fetches the user's current cart items from the database.
+  // It's wrapped in useCallback for performance optimization.
   const fetchCart = useCallback(async () => {
-    if (!session) return;
+    if (!session) {
+      setCart([]); // If user logs out, clear the cart
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -28,12 +33,13 @@ export function CartProvider({ children }) {
     }
   }, [session]);
 
-  // Fetch the cart whenever the user's session changes (i.e., on login/logout)
+  // Fetch the cart whenever the user's session changes (e.g., on login/logout).
   useEffect(() => {
     fetchCart();
   }, [fetchCart]);
 
-  // This function calls our serverless function to add an item
+  // --- NEW FUNCTION 1: Add or Update an Item ---
+  // This calls the `cart-add-item` function we built, which handles upsert logic.
   const addItemToCart = async (productId, quantity = 1) => {
     if (!session) return;
     try {
@@ -47,19 +53,67 @@ export function CartProvider({ children }) {
       });
       if (!response.ok) throw new Error('Failed to add item to cart.');
       
-      // After successfully adding, refetch the cart to get the latest state
+      // On success, refetch the cart to show the new item/quantity.
       await fetchCart();
     } catch (error) {
       console.error("Error adding item to cart:", error);
     }
   };
 
+  // --- NEW FUNCTION 2: Remove an Item ---
+  // This calls the `cart-remove-item` function.
+  const removeItemFromCart = async (cartItemId) => {
+    if (!session) return;
+    try {
+      const response = await fetch('/.netlify/functions/cart-remove-item', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ cart_item_id: cartItemId }),
+      });
+      if (!response.ok) throw new Error('Failed to remove item from cart.');
+      
+      // On success, refetch the cart.
+      await fetchCart();
+    } catch (error) {
+      console.error("Error removing item from cart:", error);
+    }
+  };
+
+  // --- NEW FUNCTION 3: Update an Item's Quantity ---
+  // This calls the `cart-update-quantity` function.
+  const updateItemQuantity = async (cartItemId, newQuantity) => {
+    if (!session) return;
+    try {
+      const response = await fetch('/.netlify/functions/cart-update-quantity', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ cart_item_id: cartItemId, new_quantity: newQuantity }),
+      });
+      if (!response.ok) throw new Error('Failed to update quantity.');
+      
+      // On success, refetch the cart.
+      await fetchCart();
+    } catch (error) {
+      console.error("Error updating quantity:", error);
+    }
+  };
+
+  // The value object provided to all consuming components.
+  // We now expose all our new functions.
   const value = {
     cart,
-    cartItemCount: cart.length,
+    cartItemCount: cart.reduce((total, item) => total + item.quantity, 0), // A more accurate item count
     loading,
     addItemToCart,
-    refetchCart: fetchCart, // Expose the fetch function for other components to use
+    removeItemFromCart,
+    updateItemQuantity,
+    refetchCart: fetchCart,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
