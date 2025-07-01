@@ -32,3 +32,11 @@ dist-ssr
 
 # Service account key
 /recipe_loop_secrets/recipe-loop-mvp-9a14c5c7bdce.json
+
+# Python
+# ---------------------------------
+# Virtual Environment
+/venv
+__pycache__/
+*.py[cod]
+*$py.class

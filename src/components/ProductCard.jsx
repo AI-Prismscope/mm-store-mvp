@@ -13,7 +13,6 @@ const PlusIcon = () => (
     const { openProductModal } = useUI();
 
     const handleAddToCart = (e) => {
-      e.preventDefault();
       e.stopPropagation();
       addItemToCart(product.id);
     };
