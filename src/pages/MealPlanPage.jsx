@@ -86,27 +86,53 @@ export default function MealPlanPage() {
     }
   };
 
-  const { assignedItems, unassignedItems } = useMemo(() => {
+  const { assignedItems, unassignedItems, plannedFridgeItems, unplannedFridgeItems } = useMemo(() => {
     if (!plannedRecipes || plannedRecipes.length === 0) {
-      return { assignedItems: new Set(), unassignedItems: cart };
+      return { 
+        assignedItems: [], 
+        unassignedItems: cart,
+        plannedFridgeItems: [],
+        unplannedFridgeItems: fridgeItems,
+      };
     }
-    const assignedProductIds = new Set();
+    
+    // Create a Set of all product IDs required by the planned recipes
+    const requiredProductIds = new Set();
     plannedRecipes.forEach(planItem => {
       planItem.recipes.recipe_ingredients.forEach(ing => {
-        assignedProductIds.add(ing.product_id);
+        requiredProductIds.add(ing.product_id);
       });
     });
+    
+    // Partition the cartItems
     const assigned = [];
     const unassigned = [];
     cart.forEach(cartItem => {
-      if (assignedProductIds.has(cartItem.product_id)) {
+      if (requiredProductIds.has(cartItem.product_id)) {
         assigned.push(cartItem);
       } else {
         unassigned.push(cartItem);
       }
     });
-    return { assignedItems: assigned, unassignedItems: unassigned };
-  }, [cart, plannedRecipes]);
+
+    // Partition the fridgeItems using the same logic
+    const plannedFridge = [];
+    const unplannedFridge = [];
+    fridgeItems.forEach(fridgeItem => {
+      if (requiredProductIds.has(fridgeItem.product_id)) {
+        plannedFridge.push(fridgeItem);
+      } else {
+        unplannedFridge.push(fridgeItem);
+      }
+    });
+
+    return { 
+      assignedItems: assigned, 
+      unassignedItems: unassigned,
+      plannedFridgeItems: plannedFridge,
+      unplannedFridgeItems: unplannedFridge,
+    };
+  }, [cart, fridgeItems, plannedRecipes]);
 
   if (loading) return <p className="p-4">Building your plan...</p>;
 
@@ -172,7 +198,8 @@ export default function MealPlanPage() {
             unassignedItems={unassignedItems} 
           />
           <FridgeOverview 
-            fridgeItems={fridgeItems} 
+            plannedItems={plannedFridgeItems} 
+            unplannedItems={unplannedFridgeItems} 
           />
           <h2 className="text-2xl font-bold mb-4">Your Meal Plan</h2>
           <div className="space-y-4">

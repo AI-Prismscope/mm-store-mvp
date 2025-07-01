@@ -1,18 +1,48 @@
 import { useMemo } from 'react';
 
+// 👇 Let's add a new icon for "unplanned" items
+const UnusedIcon = () => (
+  <svg className="h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+  </svg>
+);
+
+const CheckIcon = () => (
+  <svg className="h-4 w-4 text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+  </svg>
+);
+
+// A helper component to render an item with its status icon
+const FridgeItem = ({ item, isPlanned }) => (
+  <li className="flex items-center text-sm">
+    {isPlanned ? <CheckIcon /> : <UnusedIcon />}
+    <span className={`ml-2 truncate ${isPlanned ? 'text-gray-800' : 'text-gray-500'}`}>
+      {item.products.name}
+    </span>
+  </li>
+);
+
 // A small helper component to render a list of items, to avoid repetition.
 const ItemList = ({ items }) => (
   <ul className="space-y-1 text-sm">
     {items.map(item => (
-      <li key={item.id} className="text-gray-700 truncate">
-        {item.products.name}
-        {/* We can add quantity display and management buttons here later */}
-      </li>
+      <FridgeItem key={item.id} item={item} isPlanned={item.isPlanned} />
     ))}
   </ul>
 );
 
-export default function FridgeOverview({ fridgeItems }) {
+export default function FridgeOverview({ plannedItems = [], unplannedItems = [] }) {
+
+  // Combine and sort the items for display, keeping track of their status
+  const allFridgeItems = useMemo(() => {
+    const combined = [
+      ...plannedItems.map(item => ({ ...item, isPlanned: true })),
+      ...unplannedItems.map(item => ({ ...item, isPlanned: false }))
+    ];
+    combined.sort((a, b) => a.products.name.localeCompare(b.products.name));
+    return combined;
+  }, [plannedItems, unplannedItems]);
 
   // This `useMemo` hook processes the flat list of items into our three categorized groups.
   const categorizedItems = useMemo(() => {
@@ -23,7 +53,7 @@ export default function FridgeOverview({ fridgeItems }) {
       pantry: [],
     };
     
-    fridgeItems.forEach(item => {
+    allFridgeItems.forEach(item => {
       // Find the 'aisle' tag for the product
       const aisleTag = item.products.product_tags?.find(pt => pt.tags?.type === 'aisle');
       if (aisleTag) {
@@ -45,13 +75,28 @@ export default function FridgeOverview({ fridgeItems }) {
     }
 
     return groups;
-  }, [fridgeItems]);
+  }, [allFridgeItems]);
+
+  const totalItems = allFridgeItems.length;
+  const plannedCount = plannedItems.length;
+  const unplannedCount = unplannedItems.length;
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-lg">
-      <h2 className="text-2xl font-bold mb-4 border-b pb-3 text-gray-800">Fridge & Pantry Overview</h2>
+    <div className="bg-white p-6 rounded-lg shadow-lg mb-8">
+      <div className="flex justify-between items-center mb-4 border-b pb-3">
+        <h2 className="text-xl font-bold text-gray-800">Fridge & Pantry Overview</h2>
+        <div className="text-sm text-gray-600">
+          <span className="text-green-600 font-medium">{plannedCount} planned</span>
+          {unplannedCount > 0 && (
+            <>
+              <span className="mx-2">•</span>
+              <span className="text-gray-500">{unplannedCount} unused</span>
+            </>
+          )}
+        </div>
+      </div>
       
-      {fridgeItems.length > 0 ? (
+      {totalItems > 0 ? (
         // This is our new 3-column grid layout
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4">
           
