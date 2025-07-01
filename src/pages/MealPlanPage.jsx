@@ -1,57 +1,69 @@
 // src/pages/MealPlanPage.jsx
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 import { supabase } from '../lib/supabaseClient';
 import PlannedRecipeCard from '../components/PlannedRecipeCard';
 import ShoppingListSummary from '../components/ShoppingListSummary';
-import { useCart } from '../context/CartContext';
 
 export default function MealPlanPage() {
   const { session } = useAuth();
-  const { cart, loading: cartLoading, refetchCart } = useCart();
+  const { cart, refetchCart } = useCart();
   const [suggestions, setSuggestions] = useState([]);
   const [plannedRecipes, setPlannedRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const loadPageData = async () => {
-    setLoading(true);
-
-    let { data: items } = await supabase.from('cart_items').select('*, products(*)');
-    if (items && items.length === 0) {
-      await fetch('/.netlify/functions/cart-reset', { method: 'POST', headers: { 'Authorization': `Bearer ${session.access_token}` } });
-      await refetchCart();
-    } else {
-      refetchCart();
-    }
-    
-    const [sugRes, planRes] = await Promise.all([
-      fetch('/.netlify/functions/suggest-recipes', { method: 'POST', headers: { 'Authorization': `Bearer ${session.access_token}` } }),
-      supabase.from('meal_plan_recipes').select('*, recipes(*, recipe_ingredients(*, products(*)))')
-    ]);
-    
-    const sugData = await sugRes.json();
-    setSuggestions(sugData);
-    setPlannedRecipes(planRes.data || []);
-    
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    if (session) {
-      loadPageData();
-    }
+  const fetchSuggestions = useCallback(async () => {
+    if (!session) return;
+    try {
+      const sugRes = await fetch('/.netlify/functions/suggest-recipes', { method: 'POST', headers: { 'Authorization': `Bearer ${session.access_token}` } });
+      const sugData = await sugRes.json();
+      setSuggestions(sugData);
+    } catch (e) { console.error("Error fetching suggestions:", e); }
   }, [session]);
 
+  const fetchPlan = useCallback(async () => {
+    if (!session) return;
+    try {
+      const { data } = await supabase.from('meal_plan_recipes').select('*, recipes(*, recipe_ingredients(*, products(*)))');
+      setPlannedRecipes(data || []);
+    } catch (e) { console.error("Error fetching plan:", e); }
+  }, [session]);
+
+  useEffect(() => {
+    const initialLoad = async () => {
+      setLoading(true);
+      await Promise.all([
+        refetchCart(),
+        fetchSuggestions(),
+        fetchPlan()
+      ]);
+      setLoading(false);
+    };
+
+    if (session) {
+      initialLoad();
+    }
+  }, [session, refetchCart, fetchSuggestions, fetchPlan]);
+
   const handleAddToPlan = async (recipeId) => {
-    await supabase.from('meal_plan_recipes').insert({ recipe_id: recipeId });
-    loadPageData();
+    const { error } = await supabase.from('meal_plan_recipes').insert({ recipe_id: recipeId });
+    if (error) {
+      alert(`Error: ${error.message}`);
+    } else {
+      await fetchPlan(); 
+    }
   };
 
   const handleRemoveFromPlan = async (planItemId) => {
     if (!window.confirm("Are you sure?")) return;
-    await supabase.from('meal_plan_recipes').delete().eq('id', planItemId);
-    loadPageData();
+    const { error } = await supabase.from('meal_plan_recipes').delete().eq('id', planItemId);
+    if (error) {
+      alert(`Error: ${error.message}`);
+    } else {
+      await fetchPlan();
+    }
   };
 
   const { assignedItems, unassignedItems } = useMemo(() => {
@@ -76,14 +88,14 @@ export default function MealPlanPage() {
     return { assignedItems: assigned, unassignedItems: unassigned };
   }, [cart, plannedRecipes]);
 
-  if (loading) return <div className="text-center p-8">Loading your plan...</div>;
+  if (loading) return <p className="p-4">Building your plan...</p>;
 
   return (
     <div>
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Your Weekly Meal Plan</h1>
         <button
-          onClick={async () => { await fetch('/.netlify/functions/cart-reset', { method: 'POST', headers: { 'Authorization': `Bearer ${session.access_token}` } }); await refetchCart(); loadPageData(); }}
+          onClick={async () => { await fetch('/.netlify/functions/cart-reset', { method: 'POST', headers: { 'Authorization': `Bearer ${session.access_token}` } }); await refetchCart(); }}
           className="bg-red-500 text-white font-semibold py-2 px-4 rounded-lg shadow hover:bg-red-600 transition"
         >
           Get New Ingredients

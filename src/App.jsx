@@ -19,6 +19,7 @@ import RecipeDetailPage from './pages/RecipeDetailPage';
 import { useUI } from './context/UIContext';
 import ProductDetailModal from './components/ProductDetailModal';
 import CartReviewPanel from './components/CartReviewPanel';
+import MyFridgePage from './pages/MyFridgePage'; // 👈 Import the new page we will create
 
 export default function App() {
   const { viewingProductId } = useUI();
@@ -43,6 +44,8 @@ export default function App() {
             <Route path="/my-recipes" element={<CookbookPage />} />
             <Route path="/plan" element={<MealPlanPage />} />
             <Route path="/recipe/:id" element={<RecipeDetailPage />} />
+            {/* 👇 THE NEW ROUTE for the fridge page 👇 */}
+            <Route path="/my-fridge" element={<MyFridgePage />} />
           </Route>
         </Route>
       </Routes>
