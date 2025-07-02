@@ -25,30 +25,30 @@ export default function App() {
   const { viewingProductId } = useUI();
   return (
     <>
-      <Routes>
-        {/* Public Auth Routes (no change) */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignUpPage />} />
+    <Routes>
+      {/* Public Auth Routes (no change) */}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<SignUpPage />} />
 
-        {/* Homepage Layout (no change) */}
-        <Route element={<HomepageLayout />}>
-          <Route path="/" element={<ShopPage />} />
+      {/* Homepage Layout (no change) */}
+      <Route element={<HomepageLayout />}>
+        <Route path="/" element={<ShopPage />} />
           <Route path="/search" element={<SearchResultsPage />} />
           <Route path="/shop/:categorySlug" element={<CategoryPage />} />
-        </Route>
-        
-        {/* --- NEW: PROTECTED APP LAYOUT --- */}
-        {/* This wrapper provides the Navbar for our main app pages */}
-        <Route element={<ProtectedRoute />}>
-          <Route element={<AppLayout />}> {/* 👈 Use the new layout */}
-            <Route path="/my-recipes" element={<CookbookPage />} />
-            <Route path="/plan" element={<MealPlanPage />} />
-            <Route path="/recipe/:id" element={<RecipeDetailPage />} />
+      </Route>
+      
+      {/* --- NEW: PROTECTED APP LAYOUT --- */}
+      {/* This wrapper provides the Navbar for our main app pages */}
+      <Route element={<ProtectedRoute />}>
+        <Route element={<AppLayout />}> {/* 👈 Use the new layout */}
+          <Route path="/my-recipes" element={<CookbookPage />} />
+          <Route path="/plan" element={<MealPlanPage />} />
+          <Route path="/recipe/:id" element={<RecipeDetailPage />} />
             {/* 👇 THE NEW ROUTE for the fridge page 👇 */}
             <Route path="/my-fridge" element={<MyFridgePage />} />
-          </Route>
         </Route>
-      </Routes>
+      </Route>
+    </Routes>
       {/* Conditionally render the Product Detail Modal */}
       {viewingProductId && <ProductDetailModal productId={viewingProductId} />}
       {/* Conditionally render the Cart Review Panel */}

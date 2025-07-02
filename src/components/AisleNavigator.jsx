@@ -83,7 +83,7 @@ export default function AisleNavigator() {
                 to={`/shop/${link.slug}`}
                 className={getNavLinkClass}
               >
-                <span>{link.name}</span>
+                  <span>{link.name}</span>
               </NavLink>
             ))}
           </div>

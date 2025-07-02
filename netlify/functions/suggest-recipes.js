@@ -11,7 +11,7 @@ export async function handler(event, context) {
   };
   if (event.httpMethod === 'OPTIONS') { return { statusCode: 200, headers }; }
   if (event.httpMethod !== 'POST') { return { statusCode: 405, headers, body: 'Method Not Allowed' }; }
-
+  
   try {
     const jwt = event.headers.authorization?.split(' ')[1];
     if (!jwt) throw new Error('Authentication token is required.');
@@ -67,10 +67,10 @@ export async function handler(event, context) {
 
   } catch (err) {
     console.error('❌ suggest-recipes error:', err);
-    return {
-      statusCode: 500,
+    return { 
+      statusCode: 500, 
       headers,
-      body: JSON.stringify({ error: err.message || 'An unknown server error occurred.' })
+      body: JSON.stringify({ error: err.message || 'An unknown server error occurred.' }) 
     };
   }
 }

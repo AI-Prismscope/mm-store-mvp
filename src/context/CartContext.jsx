@@ -113,6 +113,25 @@ export function CartProvider({ children }) {
     }
   };
 
+  // --- FUNCTION 4: Add Multiple Items (Batch) ---
+  const addMultipleItemsToCart = async (items) => {
+    if (!session) return;
+    try {
+      const response = await fetch('/.netlify/functions/cart-add-multiple-items', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ items }),
+      });
+      if (!response.ok) throw new Error('Failed to add multiple items to cart.');
+      await fetchCart();
+    } catch (error) {
+      console.error('Error adding multiple items to cart:', error);
+    }
+  };
+
   // 👇 --- NEW: Calculate Subtotal using useMemo for efficiency --- 👇
   // This calculation will only re-run when the `cart` array changes.
   const cartSubtotal = useMemo(() => {
@@ -136,6 +155,7 @@ export function CartProvider({ children }) {
     removeItemFromCart,
     updateItemQuantity,
     refetchCart: fetchCart,
+    addMultipleItemsToCart, // 👈 Expose the new batch add method
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

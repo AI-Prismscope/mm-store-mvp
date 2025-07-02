@@ -1,5 +1,5 @@
 // src/components/PlannedRecipeCard.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useUI } from '../context/UIContext';
 import { useCart } from '../context/CartContext';
 
@@ -25,7 +25,7 @@ const MissingIcon = () => (
 
 // The component now accepts `cartItems` and `addItemToCart` as props
 export default function PlannedRecipeCard({ planItem, onRemove, cartItems }) {
-  const { addItemToCart, cart } = useCart();
+  const { addItemToCart, cart, addMultipleItemsToCart } = useCart();
   // `planItem` is the full row from our `meal_plan_recipes` table.
   // The actual recipe details are nested inside it.
   const recipe = planItem.recipes;
@@ -36,6 +36,68 @@ export default function PlannedRecipeCard({ planItem, onRemove, cartItems }) {
 
   const [isExpanded, setIsExpanded] = useState(false);
   const { openProductModal } = useUI();
+  // --- NEW STATE FOR BULK ADD ---
+  const [isAddingAll, setIsAddingAll] = useState(false);
+  const [missingIngredients, setMissingIngredients] = useState([]);
+  const [addAllError, setAddAllError] = useState(null);
+  const [addAllSuccess, setAddAllSuccess] = useState(false);
+
+  // --- HELPER FUNCTION: Calculate missing ingredients ---
+  const calculateMissingIngredients = (recipeIngredients, cartItems) => {
+    if (!Array.isArray(recipeIngredients) || !Array.isArray(cartItems)) {
+      return [];
+    }
+    // Map cart items by product_id for quick lookup
+    const cartQuantityMap = new Map(
+      cartItems.map(item => [item.product_id, item.quantity])
+    );
+    // Filter and map missing ingredients
+    const missing = recipeIngredients
+      .filter(ingredient => {
+        if (!ingredient || !ingredient.product_id || typeof ingredient.quantity !== 'number' || ingredient.quantity <= 0) return false;
+        const quantityInCart = cartQuantityMap.get(ingredient.product_id) || 0;
+        return quantityInCart < ingredient.quantity;
+      })
+      .map(ingredient => {
+        const quantityInCart = cartQuantityMap.get(ingredient.product_id) || 0;
+        return {
+          product_id: ingredient.product_id,
+          product_name: ingredient.products?.name || 'Unknown Product',
+          quantity_needed: ingredient.quantity - quantityInCart,
+          unit: ingredient.unit,
+          original_ingredient: ingredient
+        };
+      });
+    return missing;
+  };
+
+  // --- EFFECT: Update missing ingredients when cart or recipe changes ---
+  useEffect(() => {
+    if (recipe?.recipe_ingredients) {
+      const missing = calculateMissingIngredients(recipe.recipe_ingredients, cart);
+      setMissingIngredients(missing);
+    }
+  }, [recipe?.recipe_ingredients, cart]);
+
+  // --- HANDLER: Add all missing ingredients to cart (batch) ---
+  const handleAddAllMissing = async () => {
+    setIsAddingAll(true);
+    setAddAllError(null);
+    setAddAllSuccess(false);
+    try {
+      const items = missingIngredients.map(ing => ({
+        product_id: ing.product_id,
+        quantity: ing.quantity_needed,
+      }));
+      await addMultipleItemsToCart(items);
+      setAddAllSuccess(true);
+    } catch (err) {
+      setAddAllError('Failed to add all missing ingredients. Please try again.');
+    } finally {
+      setIsAddingAll(false);
+      setTimeout(() => setAddAllSuccess(false), 2000);
+    }
+  };
 
   // This prevents the app from crashing if the recipe data is somehow missing
   if (!recipe) {
@@ -81,6 +143,36 @@ export default function PlannedRecipeCard({ planItem, onRemove, cartItems }) {
       {isExpanded && (
         <div className="mt-4 pt-4 border-t">
           <h4 className="font-semibold mb-2 text-gray-700">Ingredients Needed:</h4>
+          {/* --- ADD ALL MISSING BUTTON --- */}
+          {missingIngredients.length > 0 && (
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <button
+                onClick={handleAddAllMissing}
+                disabled={isAddingAll}
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
+                aria-label={`Add all ${missingIngredients.length} missing ingredients to cart`}
+              >
+                {isAddingAll ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Adding Ingredients...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    <span>Add All Missing ({missingIngredients.length})</span>
+                  </>
+                )}
+              </button>
+              {addAllError && <div className="text-red-600 mt-2 text-sm">{addAllError}</div>}
+              {addAllSuccess && <div className="text-green-600 mt-2 text-sm">All missing ingredients added!</div>}
+            </div>
+          )}
           <ul className="space-y-2">
             {recipe.recipe_ingredients.map((ing) => {
               // --- The New Check ---
