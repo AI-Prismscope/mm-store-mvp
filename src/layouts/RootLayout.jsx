@@ -27,7 +27,7 @@ export default function RootLayout({ children }) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-[#F5F5DC]">
       <header className="bg-gray-800">
         <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">

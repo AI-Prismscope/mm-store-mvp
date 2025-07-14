@@ -44,7 +44,7 @@ export default function AisleNavigator() {
   ];
 
   return (
-    <aside className="h-full w-64 bg-white border-r border-gray-200 p-4">
+    <aside className="h-full w-64 border-r border-gray-200 p-4 bg-[#F5F5DC]">
       <nav className="flex flex-col space-y-8">
         
         {/* CURATED Section */}
@@ -54,12 +54,24 @@ export default function AisleNavigator() {
           </h3>
           <div className="mt-2 space-y-1">
             {curatedLinks.map((link) => (
-              <NavLink key={link.name} to={link.path} className={getNavLinkClass}>
+              <NavLink key={link.name} to={link.path} className={({ isActive }) => {
+                const commonClasses = "block px-4 py-2 text-base rounded-md transition-colors";
+                if (isActive) {
+                  return `${commonClasses} bg-[#dbe7c9] text-black font-semibold`;
+                }
+                return `${commonClasses} text-gray-800 hover:bg-gray-200`;
+              }}>
                 {link.name}
               </NavLink>
             ))}
             {/* Special link for Misfits+ Deals */}
-            <NavLink to="/shop/deals" className={getNavLinkClass}>
+            <NavLink to="/shop/deals" className={({ isActive }) => {
+                const commonClasses = "block px-4 py-2 text-base rounded-md transition-colors";
+                if (isActive) {
+                  return `${commonClasses} bg-[#dbe7c9] text-black font-semibold`;
+                }
+                return `${commonClasses} text-gray-800 hover:bg-gray-200`;
+              }}>
               <div className="flex justify-between items-center">
                 <span>Misfits+ Deals</span>
                 <span className="text-xs font-bold text-white bg-green-500 px-2 py-0.5 rounded-full">NEW</span>
@@ -74,16 +86,28 @@ export default function AisleNavigator() {
             Aisles
           </h3>
           <div className="mt-2 space-y-1">
-            <NavLink to="/" className={getNavLinkClass} end>
+            <NavLink to="/" end className={({ isActive }) => {
+                const commonClasses = "block px-4 py-2 text-base rounded-md transition-colors";
+                if (isActive) {
+                  return `${commonClasses} bg-[#dbe7c9] text-black font-semibold`;
+                }
+                return `${commonClasses} text-gray-800 hover:bg-gray-200`;
+              }}>
               <span>Shop All</span>
             </NavLink>
             {aisleLinks.map((link) => (
               <NavLink
                 key={link.slug}
                 to={`/shop/${link.slug}`}
-                className={getNavLinkClass}
+                className={({ isActive }) => {
+                  const commonClasses = "block px-4 py-2 text-base rounded-md transition-colors";
+                  if (isActive) {
+                    return `${commonClasses} bg-[#dbe7c9] text-black font-semibold`;
+                  }
+                  return `${commonClasses} text-gray-800 hover:bg-gray-200`;
+                }}
               >
-                  <span>{link.name}</span>
+                <span>{link.name}</span>
               </NavLink>
             ))}
           </div>

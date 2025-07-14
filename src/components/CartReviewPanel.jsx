@@ -19,7 +19,7 @@ export default function CartReviewPanel() {
       <div onClick={closeCart} className="absolute inset-0 bg-black bg-opacity-50"></div>
 
       {/* Sliding Panel */}
-      <div className="absolute top-0 right-0 h-full w-full max-w-md bg-white shadow-xl flex flex-col">
+      <div className="absolute top-0 right-0 h-full w-full max-w-[375px] bg-white shadow-xl flex flex-col">
         
         {/* Panel Header */}
         <div className="flex justify-between items-center p-4 border-b">

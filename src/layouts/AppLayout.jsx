@@ -5,7 +5,7 @@ import { Outlet } from 'react-router-dom';
 
 export default function AppLayout() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#F5F5DC]">
       <Navbar /> {/* Our new, standard navigation bar */}
       
       {/* A centered, single-column content area for the page */}

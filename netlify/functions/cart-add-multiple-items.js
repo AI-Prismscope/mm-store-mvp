@@ -32,7 +32,7 @@ export async function handler(event, context) {
       userSupabase.rpc('upsert_cart_item', {
         p_product_id: item.product_id,
         p_user_id: user.id,
-        p_quantity_to_add: item.quantity
+        p_quantity_to_add: Math.ceil(Number(item.quantity))
       })
     ));
 

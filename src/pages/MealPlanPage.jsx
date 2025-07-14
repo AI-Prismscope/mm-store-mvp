@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabaseClient';
 import PlannedRecipeCard from '../components/PlannedRecipeCard';
 import ShoppingListSummary from '../components/ShoppingListSummary';
 import FridgeOverview from '../components/FridgeOverview';
+import { useUI } from '../context/UIContext';
 
 export default function MealPlanPage() {
   const { session } = useAuth();
@@ -17,14 +18,18 @@ export default function MealPlanPage() {
   const [plannedRecipes, setPlannedRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isResetting, setIsResetting] = useState(false);
+  const { isCartOpen } = useUI();
 
   const fetchSuggestions = useCallback(async () => {
     if (!session) return;
     try {
       const sugRes = await fetch('/.netlify/functions/suggest-recipes', { method: 'POST', headers: { 'Authorization': `Bearer ${session.access_token}` } });
       const sugData = await sugRes.json();
-      setSuggestions(sugData);
-    } catch (e) { console.error("Error fetching suggestions:", e); }
+      setSuggestions(Array.isArray(sugData) ? sugData : []);
+    } catch (e) {
+      setSuggestions([]); // fallback to empty array on error
+      console.error("Error fetching suggestions:", e);
+    }
   }, [session]);
 
   const fetchPlan = useCallback(async () => {
@@ -138,12 +143,12 @@ export default function MealPlanPage() {
 
   return (
     <div>
+      <div className="max-w-7xl mx-auto p-4">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Your Weekly Meal Plan</h1>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <div className="lg:col-span-1 space-y-6">
           <div>
             <div className="flex justify-between items-center mb-4">
@@ -151,7 +156,7 @@ export default function MealPlanPage() {
               <button 
                 onClick={handleFullReset}
                 disabled={isResetting}
-                className="text-sm bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600 disabled:bg-blue-300"
+                className="text-sm bg-[#4CAF50] hover:bg-[#388e3c] disabled:bg-green-300 text-white font-bold px-3 py-1 rounded-lg transition-colors"
                 title="Get a new set of random ingredients"
               >
                 {isResetting ? 'Loading...' : 'Get New Ingredients'}
@@ -159,7 +164,7 @@ export default function MealPlanPage() {
             </div>
             <div className="space-y-3">
               {isResetting && <p className="text-center text-gray-500">Finding new suggestions...</p>}
-              {!isResetting && suggestions.map(recipe => (
+              {Array.isArray(suggestions) && suggestions.map(recipe => (
                 <div key={recipe.id} className="bg-white p-2 rounded-lg shadow flex items-center space-x-3">
                   <div className="flex-shrink-0 w-16 h-16">
                     <img 
@@ -191,7 +196,7 @@ export default function MealPlanPage() {
           </div>
         </div>
 
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 transition-all duration-300 min-w-0">
           <ShoppingListSummary 
             cartItems={cart}
             assignedItems={assignedItems}
@@ -201,7 +206,7 @@ export default function MealPlanPage() {
             plannedItems={plannedFridgeItems} 
             unplannedItems={unplannedFridgeItems} 
           />
-          <h2 className="text-2xl font-bold mb-4">Your Meal Plan</h2>
+          <h2 className="text-2xl font-bold mb-4 mt-8">Your Meal Plan</h2>
           <div className="space-y-4">
             {plannedRecipes.length > 0 ? (
               plannedRecipes.map(planItem => (
@@ -217,6 +222,8 @@ export default function MealPlanPage() {
             )}
           </div>
         </div>
+        <div className="hidden lg:block lg:col-span-1"></div>
+      </div>
       </div>
     </div>
   );

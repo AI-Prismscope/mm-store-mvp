@@ -95,11 +95,9 @@ export default function FridgeOverview({ plannedItems = [], unplannedItems = [] 
           )}
         </div>
       </div>
-      
       {totalItems > 0 ? (
-        // This is our new 3-column grid layout
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4">
-          
+        // Always use 3 columns
+        <div className="grid gap-x-6 gap-y-4 md:grid-cols-3">
           {/* Column 1: Produce */}
           <div>
             <h3 className="font-semibold text-green-700 mb-2">
@@ -107,7 +105,6 @@ export default function FridgeOverview({ plannedItems = [], unplannedItems = [] 
             </h3>
             <ItemList items={categorizedItems.produce} />
           </div>
-
           {/* Column 2: Proteins & Dairy */}
           <div>
             <h3 className="font-semibold text-blue-700 mb-2">
@@ -115,7 +112,6 @@ export default function FridgeOverview({ plannedItems = [], unplannedItems = [] 
             </h3>
             <ItemList items={categorizedItems.proteinsAndDairy} />
           </div>
-
           {/* Column 3: Pantry */}
           <div>
             <h3 className="font-semibold text-yellow-700 mb-2">
@@ -123,7 +119,6 @@ export default function FridgeOverview({ plannedItems = [], unplannedItems = [] 
             </h3>
             <ItemList items={categorizedItems.pantry} />
           </div>
-
         </div>
       ) : (
         <div className="text-center py-10">

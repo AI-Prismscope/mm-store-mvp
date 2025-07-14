@@ -13,8 +13,8 @@ export default function ShoppingListSummary({ cartItems, assignedItems, unassign
   return (
     <div className="bg-white p-6 rounded-lg shadow-md mb-8">
       <h2 className="text-xl font-bold mb-4 border-b pb-3">Shopping List Overview</h2>
-      {/* This is our new 3-column grid layout */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4">
+      {/* Always use 3 columns */}
+      <div className="grid gap-x-6 gap-y-4 md:grid-cols-3">
         {/* Column 1: All Items in Cart */}
         <div>
           <h3 className="font-semibold text-gray-800 mb-2">

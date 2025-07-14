@@ -13,6 +13,7 @@ export async function handler(event, context) {
   console.log('➕ CART-ADD-ITEM FUNCTION TRIGGERED');
   try {
     const { product_id, quantity = 1 } = JSON.parse(event.body);
+    const roundedQuantity = Math.ceil(Number(quantity));
     const authHeader = event.headers.authorization;
     const jwt = authHeader?.split(' ')[1];
 
@@ -42,7 +43,7 @@ export async function handler(event, context) {
     const { data, error } = await userSupabase.rpc('upsert_cart_item', {
       p_product_id: product_id,
       p_user_id: user.id,
-      p_quantity_to_add: quantity
+      p_quantity_to_add: roundedQuantity
     });
 
     if (error) {
