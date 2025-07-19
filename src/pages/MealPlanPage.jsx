@@ -177,7 +177,8 @@ export default function MealPlanPage() {
                     <p className="font-semibold text-sm leading-tight text-gray-800">{recipe.name}</p>
                     <p className="text-xs text-gray-500 mt-1">
                       Matches: <span className="font-medium text-green-600">{recipe.matchCount}</span>, 
-                      Missing: <span className="font-medium text-red-600">{recipe.gapCount}</span>
+                      Missing: <span className="font-medium text-red-600">{recipe.gapCount}</span>,<br></br>
+                      {recipe.matchPercentage === 100 && (<span className="ml-1 text-xl" role="img" aria-label="checkmark">✅</span>)}
                     </p>
                   </div>
                   <button 

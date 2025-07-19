@@ -55,8 +55,10 @@ export async function handler(event, context) {
 
       const gap_count = recipeProductIds.size - match_count;
       const final_score = match_count - gap_count;
+      const match_percentage = (match_count / recipeProductIds.size) * 100;
+      console.log('recipe name', recipe.name, 'match_percentage', match_percentage);
+      return { id: recipe.id, name: recipe.name, image_url: recipe.image_url, score: final_score, matchCount: match_count, gapCount: gap_count, matchPercentage: match_percentage };
 
-      return { id: recipe.id, name: recipe.name, image_url: recipe.image_url, score: final_score, matchCount: match_count, gapCount: gap_count };
     }).filter(Boolean);
 
     // 5. Sort and return the top suggestions
